@@ -1,27 +1,46 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ShoppingBag, Eye, EyeOff } from 'lucide-react';
+import { ShoppingBag, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { RegisterFormData } from '@/types';
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RegisterFormData>({
     name: '',
     email: '',
     password: '',
     college: '',
   });
+  const { register, isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+  // Redirect if user becomes authenticated (e.g., from another tab)
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      navigate('/browse', { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await register(formData);
+    } catch (error) {
+      // Error handling is done in the auth context
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // UI only - no backend logic
-    console.log('Signup attempt:', formData);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [id]: value,
+    }));
   };
 
   return (
@@ -57,6 +76,9 @@ const Signup = () => {
                   value={formData.name}
                   onChange={handleChange}
                   required
+                  disabled={isLoading}
+                  minLength={2}
+                  maxLength={50}
                 />
               </div>
 
@@ -69,6 +91,7 @@ const Signup = () => {
                   value={formData.email}
                   onChange={handleChange}
                   required
+                  disabled={isLoading}
                 />
                 <p className="text-xs text-muted-foreground">Use your university email for verification</p>
               </div>
@@ -82,6 +105,9 @@ const Signup = () => {
                   value={formData.college}
                   onChange={handleChange}
                   required
+                  disabled={isLoading}
+                  minLength={2}
+                  maxLength={100}
                 />
               </div>
 
@@ -95,20 +121,30 @@ const Signup = () => {
                     value={formData.password}
                     onChange={handleChange}
                     required
+                    disabled={isLoading}
+                    minLength={6}
                   />
                   <button
                     type="button"
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
-                <p className="text-xs text-muted-foreground">Must be at least 8 characters</p>
+                <p className="text-xs text-muted-foreground">Must be at least 6 characters</p>
               </div>
 
-              <Button type="submit" className="w-full" size="lg">
-                Create Account
+              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating Account...
+                  </>
+                ) : (
+                  'Create Account'
+                )}
               </Button>
             </form>
 

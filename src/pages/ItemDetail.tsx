@@ -1,29 +1,30 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, MapPin, Calendar } from 'lucide-react';
+import { ArrowLeft, MessageCircle, MapPin, Calendar, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Layout from '@/components/Layout';
-import { mockItems } from '@/data/mockData';
-import { Category, Condition } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import api, { endpoints } from '@/lib/api';
+import { ItemResponse, Category, Condition } from '@/types';
 
 const getCategoryVariant = (category: Category) => {
-  const variants: Record<Category, 'books' | 'electronics' | 'furniture' | 'clothing' | 'other'> = {
-    books: 'books',
-    electronics: 'electronics',
-    furniture: 'furniture',
-    clothing: 'clothing',
-    other: 'other',
+  const variants: Record<Category, 'default' | 'secondary'> = {
+    Books: 'default',
+    Electronics: 'secondary',
+    Furniture: 'default',
+    Clothing: 'secondary',
+    Others: 'default',
   };
   return variants[category];
 };
 
 const getConditionVariant = (condition: Condition) => {
-  const variants: Record<Condition, 'new' | 'good' | 'fair' | 'used'> = {
-    new: 'new',
-    good: 'good',
-    fair: 'fair',
-    used: 'used',
+  const variants: Record<Condition, 'default' | 'secondary'> = {
+    'New': 'secondary',
+    'Like New': 'default',
+    'Used': 'default',
+    'Poor': 'secondary',
   };
   return variants[condition];
 };
@@ -32,8 +33,54 @@ const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice
 
 const ItemDetail = () => {
   const { id } = useParams();
-  const item = mockItems.find((i) => i.id === id);
 
+  const {
+    data: itemResponse,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ['item', id],
+    queryFn: async () => {
+      const response = await api.get<ItemResponse>(endpoints.items.getById(id!));
+      return response.data.data.item;
+    },
+    enabled: !!id,
+  });
+
+  const item = itemResponse;
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container py-16 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading item...</p>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Layout>
+        <div className="container py-16 text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Failed to load item</h1>
+          <p className="text-muted-foreground mb-6">
+            {error instanceof Error ? error.message : 'Something went wrong'}
+          </p>
+          <Button asChild>
+            <Link to="/browse">Back to Browse</Link>
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Not found state
   if (!item) {
     return (
       <Layout>
@@ -129,14 +176,14 @@ const ItemDetail = () => {
             <div className="bg-secondary/50 rounded-xl p-4 mb-6">
               <div className="flex items-center gap-4">
                 <Avatar className="h-12 w-12">
-                  <AvatarImage src={item.sellerAvatar} alt={item.sellerName} />
-                  <AvatarFallback>{item.sellerName.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={item.seller.avatar} alt={item.seller.name} />
+                  <AvatarFallback>{item.seller.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-foreground">{item.sellerName}</h3>
+                  <h3 className="font-semibold text-foreground">{item.seller.name}</h3>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <MapPin className="h-3 w-3" />
-                    {item.sellerCollege}
+                    {item.seller.college}
                   </div>
                 </div>
               </div>

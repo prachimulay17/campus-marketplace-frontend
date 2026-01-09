@@ -1,19 +1,44 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ShoppingBag, Eye, EyeOff } from 'lucide-react';
+import { ShoppingBag, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { LoginFormData } from '@/types';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [formData, setFormData] = useState<LoginFormData>({
+    email: '',
+    password: '',
+  });
+  const { login, isAuthenticated, isLoading } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      const from = location.state?.from?.pathname || '/browse';
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate, location]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // UI only - no backend logic
-    console.log('Login attempt:', { email, password });
+    try {
+      await login(formData);
+    } catch (error) {
+      // Error handling is done in the auth context
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   return (
@@ -44,11 +69,13 @@ const Login = () => {
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
+                  name="email"
                   type="email"
                   placeholder="you@university.edu"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={formData.email}
+                  onChange={handleInputChange}
                   required
+                  disabled={isLoading}
                 />
               </div>
 
@@ -62,24 +89,34 @@ const Login = () => {
                 <div className="relative">
                   <Input
                     id="password"
+                    name="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={formData.password}
+                    onChange={handleInputChange}
                     required
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     onClick={() => setShowPassword(!showPassword)}
+                    disabled={isLoading}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" size="lg">
-                Sign In
+              <Button type="submit" className="w-full" size="lg" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing In...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
               </Button>
             </form>
 

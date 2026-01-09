@@ -8,21 +8,21 @@ interface ItemCardProps {
 
 const getCategoryVariant = (category: Category) => {
   const variants: Record<Category, 'default' | 'secondary'> = {
-    books: 'default',
-    electronics: 'secondary',
-    furniture: 'default',
-    clothing: 'secondary',
-    other: 'default',
+    Books: 'default',
+    Electronics: 'secondary',
+    Furniture: 'default',
+    Clothing: 'secondary',
+    Others: 'default',
   };
   return variants[category];
 };
 
 const getConditionVariant = (condition: Condition) => {
   const variants: Record<Condition, 'default' | 'secondary'> = {
-    new: 'secondary',
-    good: 'default',
-    fair: 'default',
-    used: 'secondary',
+    'New': 'secondary',
+    'Like New': 'default',
+    'Used': 'default',
+    'Poor': 'secondary',
   };
   return variants[condition];
 };
@@ -32,7 +32,7 @@ const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice
 const ItemCard = ({ item }: ItemCardProps) => {
   return (
     <Link
-      to={`/item/${item.id}`}
+      to={`/item/${item._id}`}
       className="group block bg-card rounded-xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300"
     >
       {/* Image */}
