@@ -47,7 +47,7 @@ const Browse = () => {
   } = useQuery({
     queryKey: ['items', queryParams],
     queryFn: async () => {
-      const response = await api.get<ItemsListResponse>(endpoints.items.list, {
+      const response = await api.get<{ data: ItemsListResponse }>(endpoints.items.list, {
         params: queryParams,
       });
       return response.data.data;

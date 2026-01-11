@@ -41,7 +41,7 @@ const ItemDetail = () => {
   } = useQuery({
     queryKey: ['item', id],
     queryFn: async () => {
-      const response = await api.get<ItemResponse>(endpoints.items.getById(id!));
+      const response = await api.get<{ data: { item: Item } }>(endpoints.items.getById(id!));
       return response.data.data.item;
     },
     enabled: !!id,
@@ -190,7 +190,19 @@ const ItemDetail = () => {
             </div>
 
             {/* Contact Button */}
-            <Button variant="hero" size="xl" className="w-full">
+            <Button
+              variant="hero"
+              size="xl"
+              className="w-full"
+              onClick={() => {
+                // Create a mailto link with the seller's email
+                const subject = encodeURIComponent(`Interest in: ${item.title}`);
+                const body = encodeURIComponent(
+                  `Hi ${item.seller.name},\n\nI'm interested in your item "${item.title}" listed on CampusMarket.\n\nCould we meet to discuss the purchase?\n\nBest regards`
+                );
+                window.location.href = `mailto:${item.seller.email}?subject=${subject}&body=${body}`;
+              }}
+            >
               <MessageCircle className="h-5 w-5 mr-2" />
               Contact Seller
             </Button>

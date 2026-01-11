@@ -12,6 +12,8 @@ import Browse from "./pages/Browse";
 import ItemDetail from "./pages/ItemDetail";
 import PostItem from "./pages/PostItem";
 import Profile from "./pages/Profile";
+import EditProfile from "./pages/EditProfile";
+import EditItem from "./pages/EditItem";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -44,6 +46,16 @@ const App = () => (
             <Route path="/profile" element={
               <ProtectedRoute>
                 <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile/edit" element={
+              <ProtectedRoute>
+                <EditProfile />
+              </ProtectedRoute>
+            } />
+            <Route path="/item/:id/edit" element={
+              <ProtectedRoute>
+                <EditItem />
               </ProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
