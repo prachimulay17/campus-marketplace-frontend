@@ -16,7 +16,7 @@ import Layout from '@/components/Layout';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { endpoints } from '@/lib/api';
-import { CreateItemFormData, Category, Condition, ItemResponse } from '@/types';
+import { CreateItemFormData, Category, Condition, ItemResponse, Item } from '@/types';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -106,28 +106,33 @@ const PostItem = () => {
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    // Validate required fields
-    if (!formData.title.trim()) {
-      toast.error('Title is required');
-      return;
-    }
-    if (!formData.description.trim()) {
-      toast.error('Description is required');
-      return;
-    }
-    if (formData.price <= 0) {
-      toast.error('Price must be greater than 0');
-      return;
-    }
-    if (uploadedImages.length === 0) {
-      toast.error('At least one image is required');
-      return;
-    }
+  if (isUploading) {
+    toast.error("Please wait for images to finish uploading");
+    return;
+  }
 
-    createItemMutation.mutate(formData);
-  };
+  if (!formData.title.trim()) {
+    toast.error('Title is required');
+    return;
+  }
+  if (!formData.description.trim()) {
+    toast.error('Description is required');
+    return;
+  }
+  if (formData.price <= 0) {
+    toast.error('Price must be greater than 0');
+    return;
+  }
+  if (uploadedImages.length === 0) {
+    toast.error('At least one image is required');
+    return;
+  }
+
+  createItemMutation.mutate(formData);
+};
+
 
   return (
     <Layout>
