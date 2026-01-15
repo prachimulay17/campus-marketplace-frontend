@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import api, { endpoints } from '@/lib/api';
 import { User, AuthContextType, LoginFormData, RegisterFormData, ApiResponse, AuthResponse } from '@/types';
+import { error } from 'console';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -76,6 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       navigate('/browse');
     },
     onError: (err: any) => {
+      console.log(err.response);
       toast.error(err.response?.data?.message || 'Registration failed');
     },
   });
