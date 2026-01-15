@@ -6,6 +6,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api'
 // Create axios instance with default config
 const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 console.log("API BASE URL:", api.defaults.baseURL);
 
