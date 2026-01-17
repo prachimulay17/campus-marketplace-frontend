@@ -16,6 +16,11 @@ This repository contains the **frontend** of the Campus Market application.
 - Responsive UI for all devices  
 
 ---
+## 🌐 Live Demo
+
+🔗 Live Website: https://campus-marketplace-frontend.vercel.app 
+
+🔗 Backend API: https://campus-marketplace-backend.onrender.com/api
 
 ## 🛠️ Tech Stack
 
@@ -113,3 +118,4 @@ This project is created for learning and educational purposes.
 
 Prachi Mulay
 Nice to meet you 😊
+
