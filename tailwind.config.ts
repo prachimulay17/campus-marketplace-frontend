@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -17,7 +18,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['"DM Sans"', 'system-ui', 'sans-serif'],
+        sans: ['"Poppins"', 'system-ui', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -76,6 +77,20 @@ export default {
           fair: "hsl(var(--condition-fair))",
           used: "hsl(var(--condition-used))",
         },
+        // Extra purple palette
+        purple: {
+          50: '#f5f0ff',
+          100: '#ede5ff',
+          200: '#dcceff',
+          300: '#c4a8ff',
+          400: '#a478ff',
+          500: '#8b5cf6',
+          600: '#7c3aed',
+          700: '#6d28d9',
+          800: '#5b21b6',
+          900: '#4c1d95',
+          950: '#2e1065',
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -86,6 +101,11 @@ export default {
         card: "var(--shadow-card)",
         "card-hover": "var(--shadow-card-hover)",
         soft: "var(--shadow-soft)",
+        glow: "var(--shadow-glow)",
+        "glow-lg": "0 0 60px hsl(270 80% 50% / 0.4)",
+        "purple-sm": "0 2px 12px hsl(270 80% 50% / 0.15)",
+        "purple-md": "0 4px 24px hsl(270 80% 50% / 0.2)",
+        "purple-lg": "0 8px 40px hsl(270 80% 50% / 0.3)",
       },
       keyframes: {
         "accordion-down": {
@@ -97,16 +117,41 @@ export default {
           to: { height: "0" },
         },
         "fade-in": {
-          from: { opacity: "0", transform: "translateY(8px)" },
+          from: { opacity: "0", transform: "translateY(12px)" },
           to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "fade-in-left": {
+          from: { opacity: "0", transform: "translateX(-20px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
+        },
+        "fade-in-right": {
+          from: { opacity: "0", transform: "translateX(20px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
+        },
+        "scale-in": {
+          from: { opacity: "0", transform: "scale(0.95)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
+        "slide-up": {
+          from: { opacity: "0", transform: "translateY(30px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.3s ease-out forwards",
+        "fade-in": "fade-in 0.5s ease-out forwards",
+        "fade-in-left": "fade-in-left 0.5s ease-out forwards",
+        "fade-in-right": "fade-in-right 0.5s ease-out forwards",
+        "scale-in": "scale-in 0.4s ease-out forwards",
+        "slide-up": "slide-up 0.6s ease-out forwards",
+        shimmer: "shimmer 2s infinite linear",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;
