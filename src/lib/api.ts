@@ -79,6 +79,8 @@ export const endpoints = {
     me: '/auth/me',
     updateProfile: '/auth/profile',
     changePassword: '/auth/change-password',
+    forgotPassword: '/auth/forgot-password',
+    resetPassword: (token: string) => `/auth/reset-password/${token}`,
   },
 
   // Item endpoints
