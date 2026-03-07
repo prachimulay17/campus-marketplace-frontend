@@ -34,35 +34,29 @@ api.interceptors.response.use(
   (error: AxiosError) => {
     // Handle common error cases
     if (error.response) {
-      const { status, data } = error.response;
+      const { status, data } = error.response as { status: number; data: any };
 
-      // Handle authentication errors
-      if (status === 401) {
-  localStorage.removeItem('token');
-  return Promise.reject(new Error('Session expired. Please login again.'));
-}
+      // Handle 401 for protected routes (session expired), but NOT for login/register
+      // — those routes legitimately return 401/404 on bad credentials and
+      //   the error must propagate with .response intact so callers can read the message.
+      const url = error.config?.url || '';
+      const isAuthRoute = url.includes('/auth/login') || url.includes('/auth/register');
 
-      // Handle validation errors
-      if (status === 400 && data && typeof data === 'object' && 'message' in data) {
-        return Promise.reject(new Error(data.message as string));
+      if (status === 401 && !isAuthRoute) {
+        localStorage.removeItem('token');
+        // Pass through — let caller handle with the original error
+        return Promise.reject(error);
       }
 
-      // Handle server errors
-      if (status >= 500) {
-        return Promise.reject(new Error('Server error. Please try again later.'));
-      }
-
-      // Handle other API errors with message from backend
-      if (data && typeof data === 'object' && 'message' in data) {
-        return Promise.reject(new Error(data.message as string));
-      }
+      // For all other errors, pass through the original Axios error
+      // so callers can read err.response.data.message
+      return Promise.reject(error);
     }
 
     // Handle network errors
     if (!error.response) {
-  return Promise.reject(new Error('Network error. Backend not reachable.'));
-}
-
+      return Promise.reject(new Error('Network error. Backend not reachable.'));
+    }
 
     // Handle timeout errors
     if (error.code === 'ECONNABORTED') {
@@ -70,7 +64,7 @@ api.interceptors.response.use(
     }
 
     // Generic error
-    return Promise.reject(new Error('Something went wrong. Please try again.'));
+    return Promise.reject(error);
   }
 );
 

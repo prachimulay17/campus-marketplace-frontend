@@ -4,7 +4,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import api, { endpoints } from '@/lib/api';
 import { User, AuthContextType, LoginFormData, RegisterFormData, ApiResponse, AuthResponse } from '@/types';
-import { error } from 'console';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -41,7 +40,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // ✅ LOGIN
   const loginMutation = useMutation({
     mutationFn: async (data: LoginFormData) => {
+      console.log('[LOGIN] Request payload:', { email: data.email, password: '[HIDDEN]' });
       const res = await api.post(endpoints.auth.login, data);
+      console.log('[LOGIN] API response:', res.data);
       return {
         token: res.data.token,
         user: res.data.data.user,
@@ -49,16 +50,29 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     },
     onSuccess: ({ token, user }) => {
       localStorage.setItem('token', token);
+      console.log('[LOGIN] Token stored in localStorage');
       setUser(user);
       queryClient.setQueryData(['user'], user);
       toast.success('Login successful');
       navigate('/browse');
     },
     onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Login failed');
+      // Read the backend message from the Axios error response
+      const backendMessage = err.response?.data?.message || err.message || '';
+      console.error('[LOGIN] Error:', backendMessage);
+
+      if (backendMessage === 'Invalid email') {
+        toast.error('Invalid email');
+      } else if (backendMessage === 'Invalid password') {
+        toast.error('Invalid password');
+      } else if (backendMessage === 'Please verify your email first') {
+        toast.error('Please verify your email before logging in');
+      } else {
+        toast.error(backendMessage || 'Login failed');
+      }
     },
   });
-  
+
 
   // ✅ REGISTER
   const registerMutation = useMutation({
