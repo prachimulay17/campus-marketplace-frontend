@@ -67,13 +67,13 @@ const Landing = () => {
               </p>
 
               {/* Search bar */}
-              <div className="relative max-w-lg mx-auto lg:mx-0 mb-8 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-                <div className="relative glass rounded-2xl overflow-hidden group hover:border-purple-500/30 transition-all duration-300">
+              <div className="relative max-w-lg mx-auto lg:mx-0 mb-12 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+                <div className="relative glass rounded-2xl group hover:border-purple-500/30 transition-all duration-300 mb-4">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-hover:text-purple-400 transition-colors" />
                   <input
                     type="text"
                     placeholder="What are you looking for?"
-                    className="w-full bg-transparent pl-12 pr-36 py-4 text-white placeholder:text-gray-500 focus:outline-none text-sm"
+                    className="w-full bg-transparent pl-12 pr-6 py-4 text-white placeholder:text-gray-500 focus:outline-none text-sm"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         const val = (e.target as HTMLInputElement).value;
@@ -81,9 +81,11 @@ const Landing = () => {
                       }
                     }}
                   />
+                </div>
+                <div className="flex justify-start pl-2">
                   <Link
                     to="/browse"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 gradient-btn px-5 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-1.5"
+                    className="gradient-btn px-6 py-2.5 rounded-xl text-sm font-semibold inline-flex items-center gap-1.5 shadow-lg hover:-translate-y-1 transition-all"
                   >
                     <span>Explore</span>
                     <ArrowRight className="h-4 w-4" />
