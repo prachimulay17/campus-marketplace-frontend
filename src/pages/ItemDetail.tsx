@@ -113,6 +113,8 @@ const ItemDetail = () => {
               <img
                 src={item.images[0]}
                 alt={item.title}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -123,7 +125,7 @@ const ItemDetail = () => {
                     key={index}
                     className="aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-80 transition-opacity"
                   >
-                    <img src={image} alt={`${item.title} ${index + 1}`} className="w-full h-full object-cover" />
+                    <img src={image} alt={`${item.title} ${index + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   </div>
                 ))}
               </div>

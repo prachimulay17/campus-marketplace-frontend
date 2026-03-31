@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Item, Category, Condition } from '@/types';
@@ -30,7 +31,7 @@ const getConditionColor = (condition: Condition) => {
 
 const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
-const ItemCard = ({ item }: ItemCardProps) => {
+const ItemCard = memo(({ item }: ItemCardProps) => {
   return (
     <Link
       to={`/item/${item._id}`}
@@ -41,6 +42,8 @@ const ItemCard = ({ item }: ItemCardProps) => {
         <img
           src={item.images[0]}
           alt={item.title}
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
         />
         {/* Gradient overlay on hover */}
@@ -100,6 +103,6 @@ const ItemCard = ({ item }: ItemCardProps) => {
       </div>
     </Link>
   );
-};
+});
 
 export default ItemCard;

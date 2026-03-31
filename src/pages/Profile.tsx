@@ -163,7 +163,7 @@ const Profile = () => {
               >
                 {/* Image */}
                 <div className="w-full sm:w-32 aspect-[4/3] sm:aspect-square rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                  <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
+                  <img src={item.images[0]} alt={item.title} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                 </div>
 
                 {/* Details */}
