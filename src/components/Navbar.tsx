@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ShoppingBag, Menu, X, Plus, User, LogOut, ChevronRight } from 'lucide-react';
+import { ShoppingBag, Menu, X, Plus, User, LogOut, ChevronRight, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -33,6 +33,10 @@ const Navbar = () => {
     { href: '/', label: 'Home' },
     { href: '/browse', label: 'Marketplace' },
     { href: '/post', label: 'Sell Item' },
+  ];
+
+  const authenticatedLinks = [
+    { href: '/chat', label: 'Messages', icon: MessageSquare },
   ];
 
   const handleLogout = async () => {
@@ -78,6 +82,24 @@ const Navbar = () => {
               {link.label}
             </Link>
           ))}
+          {isAuthenticated && authenticatedLinks.map((link) => {
+            const Icon = link.icon;
+            return (
+              <Link
+                key={link.href}
+                to={link.href}
+                className={cn(
+                  "px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 inline-flex items-center gap-1.5",
+                  isActive(link.href)
+                    ? "bg-purple-500/15 text-purple-300 shadow-inner"
+                    : "text-gray-400 hover:text-white hover:bg-white/5"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Desktop Auth Buttons */}
@@ -172,6 +194,25 @@ const Navbar = () => {
                 {link.label}
               </Link>
             ))}
+            {isAuthenticated && authenticatedLinks.map((link) => {
+              const Icon = link.icon;
+              return (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className={cn(
+                    "px-4 py-3 rounded-xl text-sm font-medium transition-all inline-flex items-center gap-2",
+                    isActive(link.href)
+                      ? "bg-purple-500/15 text-purple-300"
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                  )}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Icon className="h-4 w-4" />
+                  {link.label}
+                </Link>
+              );
+            })}
             <div className="mt-3 pt-3 border-t border-purple-500/10">
               {isAuthenticated && user ? (
                 <div className="space-y-2">

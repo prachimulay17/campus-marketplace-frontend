@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, MessageCircle, MapPin, Calendar, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +6,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Layout from '@/components/Layout';
 import { useQuery } from '@tanstack/react-query';
 import api, { endpoints } from '@/lib/api';
+import { useAuth } from '@/contexts/AuthContext';
+import { createConversation } from '@/services/chat.service';
 import { ItemResponse, Category, Condition, Item } from '@/types';
 
 const getCategoryVariant = (category: Category) => {
@@ -33,6 +35,8 @@ const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice
 
 const ItemDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
 
   const {
     data: itemResponse,
@@ -192,22 +196,33 @@ const ItemDetail = () => {
             </div>
 
             {/* Contact Button */}
-            <Button
-              variant="hero"
-              size="xl"
-              className="w-full"
-              onClick={() => {
-                // Create a mailto link with the seller's email
-                const subject = encodeURIComponent(`Interest in: ${item.title}`);
-                const body = encodeURIComponent(
-                  `Hi ${item.seller.name},\n\nI'm interested in your item "${item.title}" listed on CampusMarket.\n\nCould we meet to discuss the purchase?\n\nBest regards`
-                );
-                window.location.href = `mailto:${item.seller.email}?subject=${subject}&body=${body}`;
-              }}
-            >
-              <MessageCircle className="h-5 w-5 mr-2" />
-              Contact Seller
-            </Button>
+            {user?._id === item.seller._id ? (
+              <Button variant="hero" size="xl" className="w-full" disabled>
+                <MessageCircle className="h-5 w-5 mr-2" />
+                Your Item
+              </Button>
+            ) : (
+              <Button
+                variant="hero"
+                size="xl"
+                className="w-full"
+                onClick={async () => {
+                  if (!isAuthenticated) {
+                    navigate('/login', { state: { from: `/item/${id}` } });
+                    return;
+                  }
+                  try {
+                    const conv = await createConversation(id!, item.seller._id);
+                    navigate('/chat', { state: { activeConversationId: conv._id } });
+                  } catch (err) {
+                    console.error('[ItemDetail] Failed to create conversation:', err);
+                  }
+                }}
+              >
+                <MessageCircle className="h-5 w-5 mr-2" />
+                Send Message
+              </Button>
+            )}
           </div>
         </div>
       </div>

@@ -98,6 +98,17 @@ export const endpoints = {
     images: '/upload/images',
   },
 
+  // Chat endpoints
+  chat: {
+    conversations: '/chat/conversations',
+    createConversation: '/chat/conversations',
+    conversationMessages: (id: string) => `/chat/conversations/${id}/messages`,
+    markRead: (id: string) => `/chat/conversations/${id}/read`,
+    deleteMessage: (id: string) => `/chat/messages/${id}`,
+    hide: (id: string) => `/chat/conversations/${id}/hide`,
+    unhide: (id: string) => `/chat/conversations/${id}/unhide`,
+  },
+
   // OTP endpoints
   otp: {
     send: '/otp/send',

@@ -13,6 +13,7 @@ export interface User {
   email: string;
   college: string;
   avatar?: string;
+  lastSeen?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -121,6 +122,44 @@ export interface AuthContextType {
   register: (data: RegisterFormData) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+}
+
+// Chat types
+export interface Conversation {
+  _id: string;
+  participants: User[];
+  item: {
+    _id: string;
+    title: string;
+    images: string[];
+    price: number;
+  } | null;
+  lastMessage?: Message;
+  unreadCounts: Record<string, number>;
+  hiddenFor: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Message {
+  _id: string;
+  conversationId: string;
+  sender: { _id: string; name: string; avatar?: string; lastSeen?: string };
+  content: string;
+  status: "sent" | "delivered" | "seen";
+  deletedBy: string[];
+  deletedForAll: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MessagesResponse {
+  messages: Message[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+  };
 }
 
 // Error types

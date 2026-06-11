@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+const Chat = lazy(() => import("./pages/Chat"));
 
 const Landing = lazy(() => import("./pages/Landing"));
 const Login = lazy(() => import("./pages/Login"));
@@ -50,6 +51,11 @@ const App = () => (
               <Route path="/post" element={
                 <ProtectedRoute>
                   <PostItem />
+                </ProtectedRoute>
+              } />
+              <Route path="/chat" element={
+                <ProtectedRoute>
+                  <Chat />
                 </ProtectedRoute>
               } />
               <Route path="/profile" element={

@@ -226,3 +226,32 @@
   background-image: radial-gradient(circle, hsl(270 40% 30% / 0.3) 1px, transparent 1px);
   background-size: 30px 30px;
 }
+
+/* Typing dots animation */
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.6);
+  display: inline-block;
+  animation: typingBounce 1.4s ease-in-out infinite;
+}
+
+.typing-dot.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+
+.typing-dot.animation-delay-400 {
+  animation-delay: 0.4s;
+}
+
+@keyframes typingBounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
