@@ -37,12 +37,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initAuth();
   }, []);
 
+  // 🚨 Listen for session expiry events from the API interceptor
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      if (!user) return;
+      setUser(null);
+      queryClient.clear();
+      toast.error('Session expired. Please log in again.');
+      navigate('/login', { replace: true });
+    };
+
+    window.addEventListener('auth:expired', handleSessionExpired);
+    return () => window.removeEventListener('auth:expired', handleSessionExpired);
+  }, [user, navigate, queryClient]);
+
   // ✅ LOGIN
   const loginMutation = useMutation({
     mutationFn: async (data: LoginFormData) => {
-      console.log('[LOGIN] Request payload:', { email: data.email, password: '[HIDDEN]' });
       const res = await api.post(endpoints.auth.login, data);
-      console.log('[LOGIN] API response:', res.data);
       return {
         token: res.data.token,
         user: res.data.data.user,
@@ -50,7 +62,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     },
     onSuccess: ({ token, user }) => {
       localStorage.setItem('token', token);
-      console.log('[LOGIN] Token stored in localStorage');
       setUser(user);
       queryClient.setQueryData(['user'], user);
       toast.success('Login successful');
@@ -91,8 +102,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       navigate('/browse');
     },
     onError: (err: any) => {
-      console.log(err.response);
-      toast.error(err.response?.data?.message || 'Registration failed');
+      const message = err.response?.data?.message || 'Registration failed';
+      toast.error(message);
     },
   });
 

@@ -1,14 +1,16 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, MapPin, Calendar, Loader2 } from 'lucide-react';
+import { ArrowLeft, MessageCircle, MapPin, Calendar, Loader2, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Layout from '@/components/Layout';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { endpoints } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { createConversation } from '@/services/chat.service';
 import { ItemResponse, Category, Condition, Item } from '@/types';
+import { toast } from '@/hooks/use-toast';
+import { useEffect, useState } from 'react';
 
 const getCategoryVariant = (category: Category) => {
   const variants: Record<Category, 'default' | 'secondary'> = {
@@ -37,6 +39,8 @@ const ItemDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
+  const [isWishlisted, setIsWishlisted] = useState(false);
 
   const {
     data: itemResponse,
@@ -52,6 +56,77 @@ const ItemDetail = () => {
   });
 
   const item = itemResponse;
+
+  // Sync local state with server data whenever item data changes
+  useEffect(() => {
+    if (item) {
+      setIsWishlisted(item.isWishlisted || false);
+    }
+  }, [item?.isWishlisted]);
+
+  const wishlistMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.post(endpoints.items.toggleWishlist(id!));
+      return response.data;
+    },
+    onSuccess: (data) => {
+      // Update local state first for immediate UI feedback
+      setIsWishlisted(data.data.isWishlisted);
+      
+      // Update the item cache directly to ensure consistency
+      queryClient.setQueryData(['item', id], (oldData: any) => {
+        if (oldData) {
+          return {
+            ...oldData,
+            isWishlisted: data.data.isWishlisted,
+            wishlistCount: data.data.wishlistCount
+          };
+        }
+        return oldData;
+      });
+
+      // Invalidate relevant queries to refresh data across the app
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      
+      toast({
+        title: data.data.isWishlisted ? 'Added to wishlist' : 'Removed from wishlist',
+        description: data.data.isWishlisted 
+          ? 'Item saved to your wishlist' 
+          : 'Item removed from your wishlist',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to update wishlist',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleWishlistClick = () => {
+    if (!isAuthenticated) {
+      toast({
+        title: 'Login required',
+        description: 'Please login to add items to your wishlist',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Don't allow users to wishlist their own items
+    if (user?._id === item?.seller._id) {
+      toast({
+        title: 'Cannot wishlist own item',
+        description: 'You cannot add your own items to wishlist',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    wishlistMutation.mutate();
+  };
 
   // Loading state
   if (isLoading) {
@@ -195,34 +270,62 @@ const ItemDetail = () => {
               </div>
             </div>
 
-            {/* Contact Button */}
-            {user?._id === item.seller._id ? (
-              <Button variant="hero" size="xl" className="w-full" disabled>
-                <MessageCircle className="h-5 w-5 mr-2" />
-                Your Item
-              </Button>
-            ) : (
-              <Button
-                variant="hero"
-                size="xl"
-                className="w-full"
-                onClick={async () => {
-                  if (!isAuthenticated) {
-                    navigate('/login', { state: { from: `/item/${id}` } });
-                    return;
+            {/* Action Buttons */}
+            <div className="space-y-4">
+              {/* Wishlist Button */}
+              {isAuthenticated && user?._id !== item?.seller._id && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full border-purple-500/30 hover:bg-purple-500/10"
+                  onClick={handleWishlistClick}
+                  disabled={wishlistMutation.isPending}
+                >
+                  <Heart 
+                    className={`h-5 w-5 mr-2 transition-all duration-300 ${
+                      isWishlisted 
+                        ? 'text-red-400 fill-red-400' 
+                        : 'text-gray-400'
+                    }`} 
+                  />
+                  {wishlistMutation.isPending 
+                    ? 'Updating...' 
+                    : isWishlisted 
+                      ? 'Remove from Wishlist' 
+                      : 'Add to Wishlist'
                   }
-                  try {
-                    const conv = await createConversation(id!, item.seller._id);
-                    navigate('/chat', { state: { activeConversationId: conv._id } });
-                  } catch (err) {
-                    console.error('[ItemDetail] Failed to create conversation:', err);
-                  }
-                }}
-              >
-                <MessageCircle className="h-5 w-5 mr-2" />
-                Send Message
-              </Button>
-            )}
+                </Button>
+              )}
+
+              {/* Contact Button */}
+              {user?._id === item?.seller._id ? (
+                <Button variant="hero" size="xl" className="w-full" disabled>
+                  <MessageCircle className="h-5 w-5 mr-2" />
+                  Your Item
+                </Button>
+              ) : (
+                <Button
+                  variant="hero"
+                  size="xl"
+                  className="w-full"
+                  onClick={async () => {
+                    if (!isAuthenticated) {
+                      navigate('/login', { state: { from: `/item/${id}` } });
+                      return;
+                    }
+                    try {
+                      const conv = await createConversation(id!, item!.seller._id);
+                      navigate('/chat', { state: { activeConversationId: conv._id } });
+                    } catch (err) {
+                      console.error('[ItemDetail] Failed to create conversation:', err);
+                    }
+                  }}
+                >
+                  <MessageCircle className="h-5 w-5 mr-2" />
+                  Send Message
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>

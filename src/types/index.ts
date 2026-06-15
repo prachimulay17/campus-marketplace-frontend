@@ -45,6 +45,8 @@ export interface Item {
   location?: string;
   tags?: string[];
   isSold: boolean;
+  isWishlisted?: boolean;
+  wishlistCount?: number;
   createdAt: string;
   updatedAt: string;
 }

@@ -35,6 +35,8 @@ const PostItem = () => {
     tags: [],
   });
 
+  const [errors, setErrors] = useState<Partial<Record<keyof CreateItemFormData | 'images', string>>>({});
+
   const {
     uploadedImages,
     isUploading,
@@ -87,6 +89,7 @@ const PostItem = () => {
       ...prev,
       [id]: id === 'price' ? (value === '' ? 0 : Number(value)) : value,
     }));
+    clearFieldError(id as keyof CreateItemFormData);
   };
 
   const handleSelectChange = (field: keyof CreateItemFormData, value: string) => {
@@ -94,6 +97,7 @@ const PostItem = () => {
       ...prev,
       [field]: value,
     }));
+    clearFieldError(field);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,37 +105,57 @@ const PostItem = () => {
     if (files) {
       uploadImages(Array.from(files));
     }
-    // Clear the input
+    clearFieldError('images');
     e.target.value = '';
   };
 
+  const validate = (): boolean => {
+    const newErrors: Partial<Record<keyof CreateItemFormData | 'images', string>> = {};
+
+    if (!formData.title.trim()) {
+      newErrors.title = 'Title is required';
+    } else if (formData.title.trim().length < 3) {
+      newErrors.title = 'Title must be at least 3 characters';
+    }
+
+    if (!formData.description.trim()) {
+      newErrors.description = 'Description is required';
+    } else if (formData.description.trim().length < 10) {
+      newErrors.description = 'Description must be at least 10 characters';
+    }
+
+    if (!formData.price || formData.price <= 0) {
+      newErrors.price = 'Price must be greater than 0';
+    }
+
+    if (uploadedImages.length === 0) {
+      newErrors.images = 'At least one image is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const clearFieldError = (field: keyof CreateItemFormData | 'images') => {
+    setErrors(prev => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (isUploading) {
-    toast.error("Please wait for images to finish uploading");
-    return;
-  }
+    if (isUploading) {
+      toast.error('Please wait for images to finish uploading');
+      return;
+    }
 
-  if (!formData.title.trim()) {
-    toast.error('Title is required');
-    return;
-  }
-  if (!formData.description.trim()) {
-    toast.error('Description is required');
-    return;
-  }
-  if (formData.price <= 0) {
-    toast.error('Price must be greater than 0');
-    return;
-  }
-  if (uploadedImages.length === 0) {
-    toast.error('At least one image is required');
-    return;
-  }
+    if (!validate()) return;
 
-  createItemMutation.mutate(formData);
-};
+    createItemMutation.mutate(formData);
+  };
 
 
   return (
@@ -161,7 +185,7 @@ const PostItem = () => {
                     <img src={image} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
                     <button
                       type="button"
-                      onClick={() => removeUploadedImage(index)}
+                      onClick={() => { removeUploadedImage(index); clearFieldError('images'); }}
                       className="absolute top-2 right-2 p-1 bg-foreground/80 text-background rounded-full hover:bg-foreground transition-colors"
                     >
                       <X className="h-3 w-3" />
@@ -183,7 +207,7 @@ const PostItem = () => {
                     </span>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
                       multiple
                       onChange={handleImageUpload}
                       disabled={isUploading}
@@ -192,6 +216,9 @@ const PostItem = () => {
                   </label>
                 )}
               </div>
+              {errors.images && (
+                <p className="text-sm text-destructive">{errors.images}</p>
+              )}
               <p className="text-xs text-muted-foreground">
                 Upload up to 5 images. Each image must be less than 5MB and in JPEG, PNG, or WebP format.
               </p>
@@ -208,7 +235,11 @@ const PostItem = () => {
                 required
                 minLength={3}
                 maxLength={100}
+                className={errors.title ? 'border-destructive' : ''}
               />
+              {errors.title && (
+                <p className="text-sm text-destructive">{errors.title}</p>
+              )}
             </div>
 
             {/* Description */}
@@ -223,7 +254,11 @@ const PostItem = () => {
                 required
                 minLength={10}
                 maxLength={1000}
+                className={errors.description ? 'border-destructive' : ''}
               />
+              {errors.description && (
+                <p className="text-sm text-destructive">{errors.description}</p>
+              )}
             </div>
 
             {/* Price */}
@@ -232,13 +267,17 @@ const PostItem = () => {
               <Input
                 id="price"
                 type="number"
-                min="0"
+                min="0.01"
                 step="0.01"
                 placeholder="0.00"
                 value={formData.price || ''}
                 onChange={handleChange}
                 required
+                className={errors.price ? 'border-destructive' : ''}
               />
+              {errors.price && (
+                <p className="text-sm text-destructive">{errors.price}</p>
+              )}
             </div>
 
             {/* Location */}

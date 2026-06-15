@@ -1,8 +1,12 @@
-import { memo } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Item, Category, Condition } from '@/types';
-import { MapPin, Star } from 'lucide-react';
+import { MapPin, Star, Heart } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import api, { endpoints } from '@/lib/api';
+import { toast } from '@/hooks/use-toast';
 
 interface ItemCardProps {
   item: Item;
@@ -32,6 +36,81 @@ const getConditionColor = (condition: Condition) => {
 const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
 const ItemCard = memo(({ item }: ItemCardProps) => {
+  const { isAuthenticated, user } = useAuth();
+  const queryClient = useQueryClient();
+  const [isWishlisted, setIsWishlisted] = useState(item.isWishlisted || false);
+
+  // Sync local state with prop changes
+  useEffect(() => {
+    setIsWishlisted(item.isWishlisted || false);
+  }, [item.isWishlisted]);
+
+  const wishlistMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.post(endpoints.items.toggleWishlist(item._id));
+      return response.data;
+    },
+    onSuccess: (data) => {
+      // Update local state first for immediate UI feedback
+      setIsWishlisted(data.data.isWishlisted);
+      
+      // Update the cache to ensure consistency across components
+      queryClient.setQueryData(['item', item._id], (oldData: any) => {
+        if (oldData) {
+          return {
+            ...oldData,
+            isWishlisted: data.data.isWishlisted,
+            wishlistCount: data.data.wishlistCount
+          };
+        }
+        return oldData;
+      });
+
+      // Invalidate relevant queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['items'] });
+      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
+      
+      toast({
+        title: data.data.isWishlisted ? 'Added to wishlist' : 'Removed from wishlist',
+        description: data.data.isWishlisted 
+          ? 'Item saved to your wishlist' 
+          : 'Item removed from your wishlist',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.response?.data?.message || 'Failed to update wishlist',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const handleWishlistClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!isAuthenticated) {
+      toast({
+        title: 'Login required',
+        description: 'Please login to add items to your wishlist',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Don't allow users to wishlist their own items
+    if (user?._id === item.seller._id) {
+      toast({
+        title: 'Cannot wishlist own item',
+        description: 'You cannot add your own items to wishlist',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    wishlistMutation.mutate();
+  };
   return (
     <Link
       to={`/item/${item._id}`}
@@ -54,13 +133,26 @@ const ItemCard = memo(({ item }: ItemCardProps) => {
           <span className={`px-2.5 py-1 rounded-lg text-xs font-medium border backdrop-blur-sm ${getCategoryColor(item.category)}`}>
             {capitalizeFirst(item.category)}
           </span>
-        </div>
-
-        {/* Condition badge */}
-        <div className="absolute top-3 right-3">
           <span className={`px-2.5 py-1 rounded-lg text-xs font-medium border backdrop-blur-sm ${getConditionColor(item.condition)}`}>
             {capitalizeFirst(item.condition)}
           </span>
+        </div>
+
+        {/* Wishlist heart button */}
+        <div className="absolute top-3 right-3 z-10">
+          <button
+            onClick={handleWishlistClick}
+            disabled={wishlistMutation.isPending}
+            className="p-2 rounded-full bg-black/40 backdrop-blur-sm hover:bg-black/60 transition-all"
+          >
+            <Heart
+              className={`h-4 w-4 transition-all duration-300 ${
+                isWishlisted
+                  ? 'text-red-400 fill-red-400'
+                  : 'text-white'
+              }`}
+            />
+          </button>
         </div>
 
         {/* View Details button on hover */}

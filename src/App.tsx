@@ -11,9 +11,13 @@ const Chat = lazy(() => import("./pages/Chat"));
 const Landing = lazy(() => import("./pages/Landing"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const ChangePassword = lazy(() => import("./pages/ChangePassword"));
 const Browse = lazy(() => import("./pages/Browse"));
 const ItemDetail = lazy(() => import("./pages/ItemDetail"));
 const PostItem = lazy(() => import("./pages/PostItem"));
+const Wishlist = lazy(() => import("./pages/Wishlist"));
 const Profile = lazy(() => import("./pages/Profile"));
 const EditProfile = lazy(() => import("./pages/EditProfile"));
 const EditItem = lazy(() => import("./pages/EditItem"));
@@ -46,11 +50,18 @@ const App = () => (
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password/:token" element={<ResetPassword />} />
               <Route path="/browse" element={<Browse />} />
               <Route path="/item/:id" element={<ItemDetail />} />
               <Route path="/post" element={
                 <ProtectedRoute>
                   <PostItem />
+                </ProtectedRoute>
+              } />
+              <Route path="/wishlist" element={
+                <ProtectedRoute>
+                  <Wishlist />
                 </ProtectedRoute>
               } />
               <Route path="/chat" element={
@@ -66,6 +77,11 @@ const App = () => (
               <Route path="/profile/edit" element={
                 <ProtectedRoute>
                   <EditProfile />
+                </ProtectedRoute>
+              } />
+              <Route path="/change-password" element={
+                <ProtectedRoute>
+                  <ChangePassword />
                 </ProtectedRoute>
               } />
               <Route path="/item/:id/edit" element={

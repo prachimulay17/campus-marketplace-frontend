@@ -1,121 +1,107 @@
-# 🏫 Campus Market – Frontend
+# Campus Market — Frontend
 
-Campus Market is a web-based platform built for college students to buy, sell, and exchange items within their campus community.  
+Campus Market is a web-based platform built for college students to buy, sell, and exchange items within their campus community.
 This repository contains the **frontend** of the Campus Market application.
 
 ---
 
-## ✨ Features
+## Features
 
-- Browse products listed by students  
-- Search and filter items  
-- User authentication (Login / Register)  
-- Add, edit, and delete product listings  
-- Image upload support  
-- Protected routes for authenticated users  
-- Responsive UI for all devices  
-
----
-## 🌐 Live Demo
-
-🔗 Live Website: https://campus-marketplace-frontend.vercel.app 
-
-🔗 Backend API: https://campus-marketplace-backend.onrender.com/api
-
-## 🛠️ Tech Stack
-
-- React.js  
-- TypeScript / JavaScript  
-- Tailwind CSS / ShadCN UI  
-- React Router  
-- React Query / Context API  
-- Axios  
-- Vite  
+- **User authentication** (Login / Register with OTP email verification)
+- **Browse items** with search, filter, and pagination
+- **Item CRUD** (create, edit, delete listings with image upload)
+- **Wishlist / Favorites** — save items for later
+- **Real-time chat** between buyers and sellers (Socket.IO)
+- **Password reset flow** (forgot password, reset with token, change password)
+- **Protected routes** for authenticated users
+- **Responsive UI** for all devices
 
 ---
 
-## 📂 Project Structure
+## Live Demo
 
-```bash
+- **Frontend:** https://campus-marketplace-frontend.vercel.app
+- **Backend API:** https://campus-marketplace-backend.onrender.com/api
+
+---
+
+## Tech Stack
+
+- React 18 + TypeScript + Vite 5 (SWC)
+- Tailwind CSS 3 + ShadCN UI (49 Radix primitives)
+- React Router DOM 6
+- TanStack React Query 5 + Context API
+- Axios 1 (with JWT interceptors)
+- Socket.IO Client 4.8
+- React Hook Form 7 + Zod 3
+
+---
+
+## Project Structure
+
+```
 frontend/
 ├── src/
+│   ├── pages/              # 15 page components (Landing, Login, Signup,
+│   │                       #   Browse, ItemDetail, PostItem, EditItem,
+│   │                       #   Wishlist, Chat, Profile, EditProfile,
+│   │                       #   ForgotPassword, ResetPassword,
+│   │                       #   ChangePassword, NotFound)
 │   ├── components/
-│   ├── pages/
-│   ├── context/
-│   ├── hooks/
+│   │   ├── ui/              # ShadCN UI (49 Radix primitives)
+│   │   ├── chat/            # ChatWindow, ConversationList, MessageBubble, MessageInput
+│   │   ├── Layout.tsx       # Navbar + Footer wrapper
+│   │   ├── Navbar.tsx       # Responsive nav with auth dropdown
+│   │   ├── ItemCard.tsx     # Memoized item grid card with wishlist button
+│   │   ├── Footer.tsx
+│   │   └── ProtectedRoute.tsx
+│   ├── contexts/
+│   │   └── AuthContext.tsx   # Auth state, JWT management, session expiry
 │   ├── services/
-│   ├── routes/
-│   └── App.tsx
-├── public/
-├── package.json
-└── README.md
+│   │   └── chat.service.ts   # Socket.IO client + chat REST helpers
+│   ├── hooks/                # useImageUpload, use-toast, use-mobile
+│   ├── lib/
+│   │   ├── api.ts            # Axios instance, interceptors, endpoint map
+│   │   └── utils.ts          # cn() helper
+│   └── types/index.ts        # TypeScript interfaces
+├── .env                      # VITE_API_URL
+└── package.json
 ```
 
-## 🚀 Getting Started
-Clone the repository
+---
+
+## Getting Started
+
 ```bash
-git clone https://github.com/your-username/campus-market-frontend.git
-```
-Navigate to the project directory
-```bash
-cd campus-market-frontend
-```
-Install dependencies
-```bash
+git clone https://github.com/prachimulay17/campus-marketplace.git
+cd campus-marketplace/frontend
+cp .env.example .env        # Edit VITE_API_URL if needed
 npm install
-```
-Run the development server
-```bash
 npm run dev
 ```
 
-The application will start at:
+The app starts at **http://localhost:5173**.
 
-http://localhost:5173
+---
 
-## 🔗 Backend Connection
+## Backend Connection
 
-The frontend consumes REST APIs for authentication and product management.
-
-Ensure the backend server is running before testing full features.
-
-Update the API base URL in the configuration file if needed.
-
-## 📌 Future Enhancements
-
-Real-time chat between users
-
-Product wishlist
-
-Ratings and reviews
-
-Notifications
-
-## 🤝 Contributing
-
-Contributions are welcome!
-
- 1.Fork the repository
- 
- 2.Create a new branch
- ```bash
-git checkout -b feature-name
+Ensure the backend server is running. Update `VITE_API_URL` in `.env`:
 ```
-3.Commit changes
+VITE_API_URL=http://localhost:5001/api
+```
+
+---
+
+## Deployment
+
+The frontend is deployed on Vercel as a static SPA. Build command:
 ```bash
-git commit -m "Add new feature"
-```
-4.Push to GitHub
- ```bash
-git push origin feature-name
+npm run build   # outputs to dist/
 ```
 
-## 📄 License
+---
 
-This project is created for learning and educational purposes.
-
-## 👩‍💻 Author
+## Author
 
 Prachi Mulay
-Nice to meet you 😊
-

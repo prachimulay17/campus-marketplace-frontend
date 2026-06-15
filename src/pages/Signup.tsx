@@ -21,6 +21,8 @@ const Signup = () => {
     password: '',
     college: '',
   });
+
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof RegisterFormData, string>>>({});
   const { register, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,17 +34,58 @@ const Signup = () => {
     }
   }, [isAuthenticated, isLoading, navigate]);
 
+  const validateRegister = (): boolean => {
+    const errs: Partial<Record<keyof RegisterFormData, string>> = {};
+
+    if (!formData.name.trim()) {
+      errs.name = 'Full name is required';
+    } else if (formData.name.trim().length < 2) {
+      errs.name = 'Name must be at least 2 characters';
+    }
+
+    if (!formData.email.trim()) {
+      errs.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errs.email = 'Please enter a valid email address';
+    }
+
+    if (!formData.college.trim()) {
+      errs.college = 'College name is required';
+    } else if (formData.college.trim().length < 2) {
+      errs.college = 'College name must be at least 2 characters';
+    }
+
+    if (!formData.password) {
+      errs.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      errs.password = 'Password must be at least 6 characters';
+    }
+
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const clearFieldError = (field: keyof RegisterFormData) => {
+    setFieldErrors(prev => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
+    if (!validateRegister()) return;
+
+    setLoading(true);
     try {
       const res = await api.post(endpoints.otp.send, { email: formData.email });
       if (res.status === 200) {
         setStep("verify");
         setResendDisabled(true);
-        setTimeout(() => setResendDisabled(false), 30000); // Enable resend after 30 seconds
+        setTimeout(() => setResendDisabled(false), 30000);
       }
     } catch (error: any) {
       setError(error.response?.data?.message || "Failed to send OTP");
@@ -96,6 +139,7 @@ const Signup = () => {
       ...prev,
       [id]: value,
     }));
+    clearFieldError(id as keyof RegisterFormData);
   };
 
   return (
@@ -136,7 +180,11 @@ const Signup = () => {
                       disabled={loading}
                       minLength={2}
                       maxLength={50}
+                      className={fieldErrors.name ? 'border-destructive' : ''}
                     />
+                    {fieldErrors.name && (
+                      <p className="text-sm text-destructive">{fieldErrors.name}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -149,7 +197,11 @@ const Signup = () => {
                       onChange={handleChange}
                       required
                       disabled={loading}
+                      className={fieldErrors.email ? 'border-destructive' : ''}
                     />
+                    {fieldErrors.email && (
+                      <p className="text-sm text-destructive">{fieldErrors.email}</p>
+                    )}
                     <p className="text-xs text-muted-foreground">Use your university email for verification</p>
                   </div>
 
@@ -165,7 +217,11 @@ const Signup = () => {
                       disabled={loading}
                       minLength={2}
                       maxLength={100}
+                      className={fieldErrors.college ? 'border-destructive' : ''}
                     />
+                    {fieldErrors.college && (
+                      <p className="text-sm text-destructive">{fieldErrors.college}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -180,6 +236,7 @@ const Signup = () => {
                         required
                         disabled={loading}
                         minLength={6}
+                        className={fieldErrors.password ? 'border-destructive' : ''}
                       />
                       <button
                         type="button"
@@ -190,6 +247,9 @@ const Signup = () => {
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
+                    {fieldErrors.password && (
+                      <p className="text-sm text-destructive">{fieldErrors.password}</p>
+                    )}
                     <p className="text-xs text-muted-foreground">Must be at least 6 characters</p>
                   </div>
 

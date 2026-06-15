@@ -111,6 +111,9 @@ const Profile = () => {
                   <Settings className="h-4 w-4 mr-2" />
                   Edit Profile
                 </Button>
+                <Button variant="outline" size="sm" onClick={() => navigate('/change-password')}>
+                  Change Password
+                </Button>
               </div>
             </div>
           </div>

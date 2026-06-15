@@ -8,7 +8,6 @@ const api: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
 });
-console.log("API BASE URL:", api.defaults.baseURL);
 
 
 // Request interceptor for adding auth headers
@@ -44,7 +43,7 @@ api.interceptors.response.use(
 
       if (status === 401 && !isAuthRoute) {
         localStorage.removeItem('token');
-        // Pass through — let caller handle with the original error
+        window.dispatchEvent(new CustomEvent('auth:expired'));
         return Promise.reject(error);
       }
 
@@ -79,6 +78,8 @@ export const endpoints = {
     me: '/auth/me',
     updateProfile: '/auth/profile',
     changePassword: '/auth/change-password',
+    forgotPassword: '/auth/forgot-password',
+    resetPassword: '/auth/reset-password/:token',
   },
 
   // Item endpoints
@@ -91,6 +92,8 @@ export const endpoints = {
     markAsSold: (id: string) => `/items/${id}/sold`,
     getBySeller: (sellerId: string) => `/items/seller/${sellerId}`,
     getMyItems: '/items/user/my-items',
+    toggleWishlist: (id: string) => `/items/${id}/wishlist`,
+    getWishlist: '/items/user/wishlist',
   },
 
   // Upload endpoints

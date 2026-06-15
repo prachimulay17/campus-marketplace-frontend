@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ShoppingBag, Menu, X, Plus, User, LogOut, ChevronRight, MessageSquare } from 'lucide-react';
+import { ShoppingBag, Menu, X, Plus, User, LogOut, ChevronRight, MessageSquare, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -37,6 +37,7 @@ const Navbar = () => {
 
   const authenticatedLinks = [
     { href: '/chat', label: 'Messages', icon: MessageSquare },
+    { href: '/wishlist', label: 'Wishlist', icon: Heart },
   ];
 
   const handleLogout = async () => {
@@ -130,6 +131,12 @@ const Navbar = () => {
                   <Link to="/profile" className="cursor-pointer rounded-lg">
                     <User className="mr-2 h-4 w-4 text-purple-400" />
                     <span>Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/wishlist" className="cursor-pointer rounded-lg">
+                    <Heart className="mr-2 h-4 w-4 text-purple-400" />
+                    <span>Wishlist</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
@@ -233,6 +240,12 @@ const Navbar = () => {
                       <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
                         <User className="mr-2 h-4 w-4 text-purple-400" />
                         Profile
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-white/5 rounded-xl" asChild>
+                      <Link to="/wishlist" onClick={() => setIsMenuOpen(false)}>
+                        <Heart className="mr-2 h-4 w-4 text-purple-400" />
+                        Wishlist
                       </Link>
                     </Button>
                     <Button variant="ghost" className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl" onClick={handleLogout}>
