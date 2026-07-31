@@ -1,39 +1,34 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, MapPin, Calendar, Loader2, Heart } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ArrowLeft, MessageCircle, MapPin, Calendar, Loader2, Heart, User, Package, ChevronLeft, ChevronRight } from 'lucide-react';
 import Layout from '@/components/Layout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api, { endpoints } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { createConversation } from '@/services/chat.service';
-import { ItemResponse, Category, Condition, Item } from '@/types';
+import { Category, Condition, Item } from '@/types';
 import { toast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
 
-const getCategoryVariant = (category: Category) => {
-  const variants: Record<Category, 'default' | 'secondary'> = {
-    Books: 'default',
-    Electronics: 'secondary',
-    Furniture: 'default',
-    Clothing: 'secondary',
-    Others: 'default',
+const getCategoryColor = (category: Category) => {
+  const colors: Record<Category, string> = {
+    Books: 'bg-blue-100 text-blue-800 border-blue-200',
+    Electronics: 'bg-purple-100 text-purple-800 border-purple-200',
+    Furniture: 'bg-green-100 text-green-800 border-green-200',
+    Clothing: 'bg-pink-100 text-pink-800 border-pink-200',
+    Others: 'bg-gray-100 text-gray-800 border-gray-200',
   };
-  return variants[category];
+  return colors[category];
 };
 
-const getConditionVariant = (condition: Condition) => {
-  const variants: Record<Condition, 'default' | 'secondary'> = {
-    'New': 'secondary',
-    'Like New': 'default',
-    'Used': 'default',
-    'Poor': 'secondary',
+const getConditionColor = (condition: Condition) => {
+  const colors: Record<Condition, string> = {
+    'New': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+    'Like New': 'bg-teal-100 text-teal-800 border-teal-200',
+    'Used': 'bg-amber-100 text-amber-800 border-amber-200',
+    'Poor': 'bg-red-100 text-red-800 border-red-200',
   };
-  return variants[condition];
+  return colors[condition];
 };
-
-const capitalizeFirst = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
 const ItemDetail = () => {
   const { id } = useParams();
@@ -41,6 +36,12 @@ const ItemDetail = () => {
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  // Minimum swipe distance (in px)
+  const minSwipeDistance = 50;
 
   const {
     data: itemResponse,
@@ -70,10 +71,8 @@ const ItemDetail = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      // Update local state first for immediate UI feedback
       setIsWishlisted(data.data.isWishlisted);
       
-      // Update the item cache directly to ensure consistency
       queryClient.setQueryData(['item', id], (oldData: any) => {
         if (oldData) {
           return {
@@ -85,7 +84,6 @@ const ItemDetail = () => {
         return oldData;
       });
 
-      // Invalidate relevant queries to refresh data across the app
       queryClient.invalidateQueries({ queryKey: ['items'] });
       queryClient.invalidateQueries({ queryKey: ['wishlist'] });
       
@@ -115,7 +113,6 @@ const ItemDetail = () => {
       return;
     }
 
-    // Don't allow users to wishlist their own items
     if (user?._id === item?.seller._id) {
       toast({
         title: 'Cannot wishlist own item',
@@ -128,14 +125,68 @@ const ItemDetail = () => {
     wishlistMutation.mutate();
   };
 
+  // Touch handlers for swipe gestures
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (item && item.images.length > 1) {
+      if (isLeftSwipe && activeImageIndex < item.images.length - 1) {
+        setActiveImageIndex(activeImageIndex + 1);
+      }
+      if (isRightSwipe && activeImageIndex > 0) {
+        setActiveImageIndex(activeImageIndex - 1);
+      }
+    }
+  };
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!item || item.images.length <= 1) return;
+      
+      if (e.key === 'ArrowLeft' && activeImageIndex > 0) {
+        setActiveImageIndex(activeImageIndex - 1);
+      }
+      if (e.key === 'ArrowRight' && activeImageIndex < item.images.length - 1) {
+        setActiveImageIndex(activeImageIndex + 1);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeImageIndex, item]);
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
   // Loading state
   if (isLoading) {
     return (
       <Layout>
-        <div className="container py-16 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Loading item...</p>
+        <div className="item-detail-page">
+          <div className="container py-16 flex items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+              <p className="text-gray-600">Loading item details...</p>
+            </div>
           </div>
         </div>
       </Layout>
@@ -146,14 +197,16 @@ const ItemDetail = () => {
   if (error) {
     return (
       <Layout>
-        <div className="container py-16 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Failed to load item</h1>
-          <p className="text-muted-foreground mb-6">
-            {error instanceof Error ? error.message : 'Something went wrong'}
-          </p>
-          <Button asChild>
-            <Link to="/browse">Back to Browse</Link>
-          </Button>
+        <div className="item-detail-page">
+          <div className="container py-16 text-center">
+            <h1 className="item-detail-title mb-4">Unable to load item</h1>
+            <p className="text-gray-600 mb-6">
+              {error instanceof Error ? error.message : 'Something went wrong'}
+            </p>
+            <Link to="/browse" className="item-detail-button item-detail-button-primary">
+              Back to Browse
+            </Link>
+          </div>
         </div>
       </Layout>
     );
@@ -163,11 +216,13 @@ const ItemDetail = () => {
   if (!item) {
     return (
       <Layout>
-        <div className="container py-16 text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Item not found</h1>
-          <Button asChild>
-            <Link to="/browse">Back to Browse</Link>
-          </Button>
+        <div className="item-detail-page">
+          <div className="container py-16 text-center">
+            <h1 className="item-detail-title mb-4">Item not found</h1>
+            <Link to="/browse" className="item-detail-button item-detail-button-primary">
+              Back to Browse
+            </Link>
+          </div>
         </div>
       </Layout>
     );
@@ -175,156 +230,202 @@ const ItemDetail = () => {
 
   return (
     <Layout>
-      <div className="container py-6 md:py-8">
-        {/* Back Button */}
-        <Link
-          to="/browse"
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Browse
-        </Link>
+      <div className="item-detail-page">
+        <div className="item-detail-container">
+          {/* Back Button */}
+          <Link to="/browse" className="back-link">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Campus Marketplace
+          </Link>
 
-        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-          {/* Image Gallery */}
-          <div className="space-y-4">
-            <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-muted">
-              <img
-                src={item.images[0]}
-                alt={item.title}
-                loading="lazy"
-                decoding="async"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            {item.images.length > 1 && (
-              <div className="grid grid-cols-4 gap-2">
-                {item.images.map((image, index) => (
-                  <div
-                    key={index}
-                    className="aspect-square rounded-lg overflow-hidden bg-muted cursor-pointer hover:opacity-80 transition-opacity"
-                  >
-                    <img src={image} alt={`${item.title} ${index + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+          {/* Single Polaroid Gallery */}
+          <div className="polaroid-gallery">
+            {item.images.length === 1 ? (
+              // Single Polaroid
+              <div className="polaroid-single">
+                <img
+                  src={item.images[0]}
+                  alt={item.title}
+                  className="polaroid-image"
+                />
+                <div className="polaroid-caption">{item.title}</div>
+              </div>
+            ) : (
+              // Multiple Images with Navigation
+              <div className="polaroid-navigation">
+                <button
+                  className="polaroid-nav-button prev"
+                  onClick={() => setActiveImageIndex(Math.max(0, activeImageIndex - 1))}
+                  disabled={activeImageIndex === 0}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+
+                <div 
+                  className="polaroid-multiple"
+                  onTouchStart={handleTouchStart}
+                  onTouchMove={handleTouchMove}
+                  onTouchEnd={handleTouchEnd}
+                >
+                  <img
+                    src={item.images[activeImageIndex]}
+                    alt={`${item.title} ${activeImageIndex + 1}`}
+                    className="polaroid-image"
+                  />
+                  <div className="polaroid-caption">
+                    {activeImageIndex === 0 ? item.title : `Photo ${activeImageIndex + 1}`}
                   </div>
-                ))}
+                  <div className="polaroid-counter">
+                    {activeImageIndex + 1} / {item.images.length}
+                  </div>
+                </div>
+
+                <button
+                  className="polaroid-nav-button next"
+                  onClick={() => setActiveImageIndex(Math.min(item.images.length - 1, activeImageIndex + 1))}
+                  disabled={activeImageIndex === item.images.length - 1}
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
               </div>
             )}
           </div>
 
-          {/* Item Details */}
-          <div>
-            {/* Badges */}
-            <div className="flex items-center gap-2 mb-4">
-              <Badge variant={getCategoryVariant(item.category)}>
-                {capitalizeFirst(item.category)}
-              </Badge>
-              <Badge variant={getConditionVariant(item.condition)}>
-                {capitalizeFirst(item.condition)}
-              </Badge>
-            </div>
+          {/* Editorial Content - Single Column */}
+          <div className="item-detail-content">
+            <div className="item-detail-inner">
+              {/* Title */}
+              <h1 className="item-detail-title">{item.title}</h1>
 
-            {/* Title */}
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-              {item.title}
-            </h1>
+              {/* Price */}
+              <div className="item-detail-price">₹{item.price.toLocaleString()}</div>
 
-            {/* Price */}
-            <p className="text-3xl font-bold text-primary mb-6">
-              ₹{item.price}
-            </p>
+              {/* Category and Condition Badges */}
+              <div className="item-detail-badges">
+                <span className={`item-detail-badge ${getCategoryColor(item.category)}`}>
+                  {item.category}
+                </span>
+                <span className={`item-detail-badge ${getConditionColor(item.condition)}`}>
+                  {item.condition}
+                </span>
+              </div>
 
-            {/* Description */}
-            <div className="mb-8">
-              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide mb-2">
-                Description
-              </h2>
-              <p className="text-muted-foreground leading-relaxed">
-                {item.description}
-              </p>
-            </div>
+              {/* About Item */}
+              <div className="item-detail-section">
+                <div className="item-detail-section-title">
+                  <Package className="w-4 h-4" />
+                  About This Item
+                </div>
+                <div className="item-detail-section-content">
+                  {item.description}
+                </div>
+              </div>
 
-            {/* Posted Date */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
-              <Calendar className="h-4 w-4" />
-              Posted on {new Date(item.createdAt).toLocaleDateString('en-US', {
-                month: 'long',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            </div>
-
-            {/* Seller Card */}
-            <div className="bg-secondary/50 rounded-xl p-4 mb-6">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={item.seller.avatar} alt={item.seller.name} />
-                  <AvatarFallback>{item.seller.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-foreground">{item.seller.name}</h3>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <MapPin className="h-3 w-3" />
-                    {item.seller.college}
+              {/* Seller Information */}
+              <div className="item-detail-section">
+                <div className="item-detail-section-title">
+                  <User className="w-4 h-4" />
+                  Seller
+                </div>
+                <div className="item-detail-seller">
+                  <div className="item-detail-seller-avatar">
+                    {item.seller.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="item-detail-seller-info">
+                    <h3>{item.seller.name}</h3>
+                    <div className="item-detail-seller-location">
+                      <MapPin className="h-3.5 w-3.5" />
+                      <span>{item.seller.college}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Action Buttons */}
-            <div className="space-y-4">
-              {/* Wishlist Button */}
-              {isAuthenticated && user?._id !== item?.seller._id && (
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full border-purple-500/30 hover:bg-purple-500/10"
-                  onClick={handleWishlistClick}
-                  disabled={wishlistMutation.isPending}
-                >
-                  <Heart 
-                    className={`h-5 w-5 mr-2 transition-all duration-300 ${
-                      isWishlisted 
-                        ? 'text-red-400 fill-red-400' 
-                        : 'text-gray-400'
-                    }`} 
-                  />
-                  {wishlistMutation.isPending 
-                    ? 'Updating...' 
-                    : isWishlisted 
-                      ? 'Remove from Wishlist' 
-                      : 'Add to Wishlist'
-                  }
-                </Button>
+              {/* Pickup Location */}
+              {item.location && (
+                <div className="item-detail-section">
+                  <div className="item-detail-section-title">
+                    <MapPin className="w-4 h-4" />
+                    Pickup Location
+                  </div>
+                  <div className="item-detail-section-content">
+                    {item.location}
+                  </div>
+                </div>
               )}
 
-              {/* Contact Button */}
-              {user?._id === item?.seller._id ? (
-                <Button variant="hero" size="xl" className="w-full" disabled>
-                  <MessageCircle className="h-5 w-5 mr-2" />
-                  Your Item
-                </Button>
-              ) : (
-                <Button
-                  variant="hero"
-                  size="xl"
-                  className="w-full"
-                  onClick={async () => {
-                    if (!isAuthenticated) {
-                      navigate('/login', { state: { from: `/item/${id}` } });
-                      return;
+              {/* Posted Date */}
+              <div className="item-detail-section">
+                <div className="item-detail-section-title">
+                  <Calendar className="w-4 h-4" />
+                  Posted Date
+                </div>
+                <div className="item-detail-section-content">
+                  {formatDate(item.createdAt)}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="item-detail-actions">
+                {/* Wishlist Button */}
+                {isAuthenticated && user?._id !== item?.seller._id && (
+                  <button
+                    className="item-detail-button item-detail-button-secondary"
+                    onClick={handleWishlistClick}
+                    disabled={wishlistMutation.isPending}
+                  >
+                    <Heart 
+                      className={`h-4 w-4 transition-all duration-300 ${
+                        isWishlisted 
+                          ? 'text-red-500 fill-red-500' 
+                          : 'text-gray-400'
+                      }`} 
+                    />
+                    {wishlistMutation.isPending 
+                      ? 'Updating...' 
+                      : isWishlisted 
+                        ? 'Remove from Wishlist' 
+                        : 'Add to Wishlist'
                     }
-                    try {
-                      const conv = await createConversation(id!, item!.seller._id);
-                      navigate('/chat', { state: { activeConversationId: conv._id } });
-                    } catch (err) {
-                      console.error('[ItemDetail] Failed to create conversation:', err);
-                    }
-                  }}
-                >
-                  <MessageCircle className="h-5 w-5 mr-2" />
-                  Send Message
-                </Button>
-              )}
+                  </button>
+                )}
+
+                {/* Contact Button */}
+                {user?._id === item?.seller._id ? (
+                  <div className="item-detail-button item-detail-button-primary opacity-50 cursor-not-allowed">
+                    <MessageCircle className="h-4 w-4" />
+                    This is your item
+                  </div>
+                ) : (
+                  <button
+                    className="item-detail-button item-detail-button-primary"
+                    onClick={async () => {
+                      if (!isAuthenticated) {
+                        navigate('/login', { state: { from: `/item/${id}` } });
+                        return;
+                      }
+                      try {
+                        const conv = await createConversation(id!, item!.seller._id);
+                        navigate('/chat', { state: { activeConversationId: conv._id } });
+                      } catch (err) {
+                        console.error('[ItemDetail] Failed to create/open conversation:', err);
+                        
+                        // Fallback: Navigate to chat page without activeConversationId
+                        // The chat page will show the conversation list where user can manually select
+                        navigate('/chat');
+                        
+                        toast({
+                          title: 'Chat opened',
+                          description: 'Please select your conversation from the list.',
+                        });
+                      }
+                    }}
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Start Conversation
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

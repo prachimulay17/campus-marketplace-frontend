@@ -58,6 +58,14 @@ export function leaveConversation(conversationId: string): Promise<void> {
   });
 }
 
+// Multiple listeners support for various events
+const messageListeners = new Set<(message: Message) => void>();
+const messagesSeenListeners = new Set<(data: { conversationId: string; seenBy: string }) => void>();
+const userStatusListeners = new Set<(data: { userId: string; status: "online" | "offline"; lastSeen?: string }) => void>();
+const userTypingListeners = new Set<(data: { conversationId: string; userId: string }) => void>();
+const userStoppedTypingListeners = new Set<(data: { conversationId: string; userId: string }) => void>();
+const messageDeletedListeners = new Set<(data: { messageId: string; conversationId: string; type: "forMe" | "forEveryone"; content?: string }) => void>();
+
 //
 // Send / receive messages
 //
@@ -82,13 +90,29 @@ export function sendMessage(
 
 export function onReceiveMessage(callback: (message: Message) => void) {
   if (!socket) return;
-  socket.off("receiveMessage").on("receiveMessage", (data: any) => {
-    callback(data.message);
-  });
+  
+  messageListeners.add(callback);
+  
+  // Only set up socket listener if this is the first callback
+  if (messageListeners.size === 1) {
+    socket.off("receiveMessage").on("receiveMessage", (data: any) => {
+      // Notify all registered listeners
+      messageListeners.forEach(listener => listener(data.message));
+    });
+  }
 }
 
-export function offReceiveMessage() {
-  socket?.off("receiveMessage");
+export function offReceiveMessage(callback?: (message: Message) => void) {
+  if (callback) {
+    messageListeners.delete(callback);
+  } else {
+    messageListeners.clear();
+  }
+  
+  // Only remove socket listener if no callbacks remain
+  if (messageListeners.size === 0) {
+    socket?.off("receiveMessage");
+  }
 }
 
 //
@@ -116,11 +140,29 @@ export function onMessagesSeen(
   }) => void
 ) {
   if (!socket) return;
-  socket.off("messagesSeen").on("messagesSeen", callback);
+  
+  messagesSeenListeners.add(callback);
+  
+  // Only set up socket listener if this is the first callback
+  if (messagesSeenListeners.size === 1) {
+    socket.off("messagesSeen").on("messagesSeen", (data) => {
+      // Notify all registered listeners
+      messagesSeenListeners.forEach(listener => listener(data));
+    });
+  }
 }
 
-export function offMessagesSeen() {
-  socket?.off("messagesSeen");
+export function offMessagesSeen(callback?: (data: { conversationId: string; seenBy: string }) => void) {
+  if (callback) {
+    messagesSeenListeners.delete(callback);
+  } else {
+    messagesSeenListeners.clear();
+  }
+  
+  // Only remove socket listener if no callbacks remain
+  if (messagesSeenListeners.size === 0) {
+    socket?.off("messagesSeen");
+  }
 }
 
 //
@@ -135,11 +177,28 @@ type StatusCallback = (data: {
 
 export function onUserStatus(callback: StatusCallback) {
   if (!socket) return;
-  socket.off("userStatusUpdate").on("userStatusUpdate", callback);
+  
+  userStatusListeners.add(callback);
+  
+  // Only set up socket listener if this is the first callback
+  if (userStatusListeners.size === 1) {
+    socket.off("userStatusUpdate").on("userStatusUpdate", (data) => {
+      userStatusListeners.forEach(listener => listener(data));
+    });
+  }
 }
 
-export function offUserStatus() {
-  socket?.off("userStatusUpdate");
+export function offUserStatus(callback?: StatusCallback) {
+  if (callback) {
+    userStatusListeners.delete(callback);
+  } else {
+    userStatusListeners.clear();
+  }
+  
+  // Only remove socket listener if no callbacks remain
+  if (userStatusListeners.size === 0) {
+    socket?.off("userStatusUpdate");
+  }
 }
 
 //
@@ -158,20 +217,54 @@ export function sendTypingEnd(conversationId: string) {
 
 export function onUserTyping(callback: TypingCallback) {
   if (!socket) return;
-  socket.off("user_typing").on("user_typing", callback);
+  
+  userTypingListeners.add(callback);
+  
+  // Only set up socket listener if this is the first callback
+  if (userTypingListeners.size === 1) {
+    socket.off("user_typing").on("user_typing", (data) => {
+      userTypingListeners.forEach(listener => listener(data));
+    });
+  }
 }
 
-export function offUserTyping() {
-  socket?.off("user_typing");
+export function offUserTyping(callback?: TypingCallback) {
+  if (callback) {
+    userTypingListeners.delete(callback);
+  } else {
+    userTypingListeners.clear();
+  }
+  
+  // Only remove socket listener if no callbacks remain
+  if (userTypingListeners.size === 0) {
+    socket?.off("user_typing");
+  }
 }
 
 export function onUserStoppedTyping(callback: TypingCallback) {
   if (!socket) return;
-  socket.off("user_stopped_typing").on("user_stopped_typing", callback);
+  
+  userStoppedTypingListeners.add(callback);
+  
+  // Only set up socket listener if this is the first callback
+  if (userStoppedTypingListeners.size === 1) {
+    socket.off("user_stopped_typing").on("user_stopped_typing", (data) => {
+      userStoppedTypingListeners.forEach(listener => listener(data));
+    });
+  }
 }
 
-export function offUserStoppedTyping() {
-  socket?.off("user_stopped_typing");
+export function offUserStoppedTyping(callback?: TypingCallback) {
+  if (callback) {
+    userStoppedTypingListeners.delete(callback);
+  } else {
+    userStoppedTypingListeners.clear();
+  }
+  
+  // Only remove socket listener if no callbacks remain
+  if (userStoppedTypingListeners.size === 0) {
+    socket?.off("user_stopped_typing");
+  }
 }
 
 // Throttled typing sender — emits typing_start on first call,
@@ -267,9 +360,26 @@ export function onMessageDeleted(
   }) => void
 ) {
   if (!socket) return;
-  socket.off("messageDeleted").on("messageDeleted", callback);
+  
+  messageDeletedListeners.add(callback);
+  
+  // Only set up socket listener if this is the first callback
+  if (messageDeletedListeners.size === 1) {
+    socket.off("messageDeleted").on("messageDeleted", (data) => {
+      messageDeletedListeners.forEach(listener => listener(data));
+    });
+  }
 }
 
-export function offMessageDeleted() {
-  socket?.off("messageDeleted");
+export function offMessageDeleted(callback?: (data: { messageId: string; conversationId: string; type: "forMe" | "forEveryone"; content?: string }) => void) {
+  if (callback) {
+    messageDeletedListeners.delete(callback);
+  } else {
+    messageDeletedListeners.clear();
+  }
+  
+  // Only remove socket listener if no callbacks remain
+  if (messageDeletedListeners.size === 0) {
+    socket?.off("messageDeleted");
+  }
 }

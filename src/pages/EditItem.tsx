@@ -98,7 +98,7 @@ const EditItem = () => {
     mutationFn: async (data: UpdateItemFormData) => {
       const itemData = {
         ...data,
-        images: uploadedImages.length > 0 ? uploadedImages : formData.images,
+        images: [...(formData.images || []), ...uploadedImages],
         price: Number(data.price),
       };
       const response = await api.patch<{ data: { item: Item } }>(endpoints.items.update(id!), itemData);

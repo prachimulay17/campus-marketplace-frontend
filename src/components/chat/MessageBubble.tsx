@@ -62,7 +62,6 @@ export default function MessageBubble({
   const [showMenu, setShowMenu] = useState(false);
   const [menuPos, setMenuPos] = useState({ x: 0, y: 0 });
   const menuRef = useRef<HTMLDivElement>(null);
-  const radius = isOwn ? ownRadius[groupPosition] : otherRadius[groupPosition];
 
   // Check if message is deleted for current user
   const isDeletedForMe = message.deletedBy?.includes(currentUserId) || false;
@@ -105,124 +104,96 @@ export default function MessageBubble({
   // Deleted message placeholder
   if (isDeletedForAll) {
     return (
-      <div
-        className={`flex ${isOwn ? "justify-end" : "justify-start"} ${
-          groupPosition === "first" || groupPosition === "single" ? "mt-2.5" : "mt-0.5"
-        }`}
-      >
-        <div className={`flex items-end gap-2 max-w-[75%] ${isOwn ? "flex-row-reverse" : "flex-row"}`}>
-          {!isOwn && showSender ? (
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-semibold shrink-0 mb-0.5">
-              {message.sender.name?.charAt(0).toUpperCase() || "?"}
-            </div>
-          ) : !isOwn ? (
-            <div className="w-7 shrink-0" />
-          ) : null}
-
-          <div>
-            {!isOwn && showSender && (
-              <div className="text-[11px] text-gray-500 mb-0.5 ml-1">
-                {message.sender.name}
-              </div>
-            )}
-            <div
-              className={`px-3 py-1.5 text-[14px] leading-[1.4] break-words italic ${
-                isOwn
-                  ? `bg-purple-600/50 text-white/70 ${radius}`
-                  : `bg-[#1a1625]/50 text-gray-500 ${radius}`
-              }`}
-            >
-              <div className="flex items-center gap-1.5">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-70">
-                  <path d="M3 6h18" />
-                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                  <line x1="10" y1="11" x2="10" y2="17" />
-                  <line x1="14" y1="11" x2="14" y2="17" />
-                </svg>
-                <span>{message.content}</span>
-              </div>
+      <div className={`editorial-message-bubble ${isOwn ? 'own' : 'other'}`}>
+        <div className={`editorial-bubble-wrapper ${isOwn ? 'own' : 'other'}`}>
+          <div className={`editorial-bubble-content ${isOwn ? 'own' : 'other'} opacity-60`}>
+            <div className="flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-70">
+                <path d="M3 6h18" />
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                <line x1="10" y1="11" x2="10" y2="17" />
+                <line x1="14" y1="11" x2="14" y2="17" />
+              </svg>
+              <span className="italic">{message.content}</span>
             </div>
           </div>
+          {(groupPosition === "last" || groupPosition === "single") && (
+            <MessageTimestamp
+              message={message}
+              isOwn={isOwn}
+              groupPosition={groupPosition}
+            />
+          )}
         </div>
       </div>
     );
   }
 
   return (
-    <div
-      className={`flex ${isOwn ? "justify-end" : "justify-start"} ${
-        groupPosition === "first" || groupPosition === "single" ? "mt-2.5" : "mt-0.5"
-      }`}
-    >
-      <div className={`flex items-end gap-2 max-w-[75%] ${isOwn ? "flex-row-reverse" : "flex-row"}`}>
-        {/* Avatar — only for other's group start */}
-        {!isOwn && showSender ? (
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-xs font-semibold shrink-0 mb-0.5">
-            {message.sender.name?.charAt(0).toUpperCase() || "?"}
+    <div className={`editorial-message-bubble ${isOwn ? 'own' : 'other'}`}>
+      <div className={`editorial-bubble-wrapper ${isOwn ? 'own' : 'other'}`}>
+        {/* Sender name for other messages at group start */}
+        {!isOwn && showSender && (
+          <div className="text-xs text-gray-500 mb-1 px-2">
+            {message.sender.name}
           </div>
-        ) : !isOwn ? (
-          <div className="w-7 shrink-0" />
-        ) : null}
+        )}
 
-        <div className="relative">
-          {/* Sender name — only at group start for other messages */}
-          {!isOwn && showSender && (
-            <div className="text-[11px] text-gray-500 mb-0.5 ml-1">
-              {message.sender.name}
-            </div>
-          )}
-
-          {/* Bubble */}
-          <div
-            className={`px-3 py-1.5 text-[14px] leading-[1.4] break-words cursor-pointer group ${
-              isOwn
-                ? `bg-purple-600 text-white ${radius}`
-                : `bg-[#1a1625] text-gray-100 ${radius}`
-            }`}
-            onContextMenu={handleContextMenu}
-          >
-            <div className="flex items-center gap-1">
-              <span>{message.content}</span>
-              {/* Menu trigger for own messages */}
-              {isOwn && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMenuPos({ x: e.clientX, y: e.clientY });
-                    setShowMenu(!showMenu);
-                  }}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-white/10 rounded-full"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="5" r="2" />
-                    <circle cx="12" cy="12" r="2" />
-                    <circle cx="12" cy="19" r="2" />
-                  </svg>
-                </button>
-              )}
-            </div>
+        {/* Message bubble */}
+        <div
+          className={`editorial-bubble-content ${isOwn ? 'own' : 'other'} group cursor-pointer relative`}
+          onContextMenu={handleContextMenu}
+        >
+          <div className="flex items-center gap-1">
+            <span>{message.content}</span>
+            {/* Menu trigger for own messages */}
+            {isOwn && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuPos({ x: e.clientX, y: e.clientY });
+                  setShowMenu(!showMenu);
+                }}
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-black/10 rounded-full ml-2"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="5" r="2" />
+                  <circle cx="12" cy="12" r="2" />
+                  <circle cx="12" cy="19" r="2" />
+                </svg>
+              </button>
+            )}
           </div>
         </div>
+
+        {/* Timestamp */}
+        {(groupPosition === "last" || groupPosition === "single") && (
+          <MessageTimestamp
+            message={message}
+            isOwn={isOwn}
+            groupPosition={groupPosition}
+          />
+        )}
       </div>
 
       {/* Context Menu */}
       {showMenu && (
         <div
           ref={menuRef}
-          className="fixed z-50 bg-[#1a1625] border border-white/10 rounded-lg shadow-xl py-1 min-w-[160px]"
+          className="chat-context-menu"
           style={{ left: menuPos.x, top: menuPos.y }}
         >
           <button
             onClick={() => handleMenuClick("forMe")}
-            className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-white/5 transition-colors"
+            className="chat-context-menu-item"
           >
             Delete for me
           </button>
           {isWithinUnsendWindow() && (
             <button
               onClick={() => handleMenuClick("forEveryone")}
-              className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/5 transition-colors"
+              className="chat-context-menu-item text-red-600"
             >
               Unsend for everyone
             </button>
@@ -246,16 +217,14 @@ export function MessageTimestamp({
   if (message.deletedForAll) return null;
 
   return (
-    <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mt-0.5`}>
-      <div className="ml-9 flex items-center gap-0.5">
-        <span className="text-[10px] text-gray-500">
-          {new Date(message.createdAt).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </span>
-        {isOwn && <StatusIcon status={message.status} />}
-      </div>
+    <div className={`message-timestamp ${isOwn ? 'own' : 'other'}`}>
+      <span>
+        {new Date(message.createdAt).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+      </span>
+      {isOwn && <StatusIcon status={message.status} />}
     </div>
   );
 }

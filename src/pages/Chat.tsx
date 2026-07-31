@@ -41,8 +41,26 @@ export default function Chat() {
         const data = await fetchConversations();
         setConversations(data);
         if (initialConvId) {
-          const match = data.find((c) => c._id === initialConvId);
-          if (match) setActiveConv(match);
+          let match = data.find((c) => c._id === initialConvId);
+          
+          // If conversation not found immediately (e.g., just unhidden), try once more after a brief delay
+          if (!match) {
+            setTimeout(async () => {
+              try {
+                const retryData = await fetchConversations();
+                setConversations(retryData);
+                const retryMatch = retryData.find((c) => c._id === initialConvId);
+                if (retryMatch) {
+                  setActiveConv(retryMatch);
+                }
+              } catch (retryErr) {
+                console.error("[Chat] Retry fetch failed:", retryErr);
+              }
+            }, 500);
+          } else {
+            setActiveConv(match);
+          }
+          
           window.history.replaceState({}, "");
         }
       } catch (err) {
@@ -54,8 +72,8 @@ export default function Chat() {
 
     load();
 
-    // Sync incoming messages to conversation list
-    onReceiveMessage((msg: Message) => {
+    // Define handlers for this component
+    const handleReceiveMessage = (msg: Message) => {
       setConversations((prev) => {
         const idx = prev.findIndex((c) => c._id === msg.conversationId);
         if (idx === -1) return prev;
@@ -76,10 +94,9 @@ export default function Chat() {
         updated.unshift(conv);
         return updated;
       });
-    });
+    };
 
-    // Sync seen status to conversation list (clear unread)
-    onMessagesSeen(({ conversationId, seenBy }) => {
+    const handleMessagesSeen = ({ conversationId, seenBy }: { conversationId: string; seenBy: string }) => {
       const myId = JSON.parse(localStorage.getItem("user") || "{}")._id;
       if (seenBy === myId) return; // Don't clear our own unread on our own seen events
       setConversations((prev) => {
@@ -91,10 +108,9 @@ export default function Chat() {
         updated[idx] = conv;
         return updated;
       });
-    });
+    };
 
-    // Typing indicators for conversation list
-    onUserTyping(({ conversationId, userId }) => {
+    const handleUserTyping = ({ conversationId, userId }: { conversationId: string; userId: string }) => {
       const conv = conversationsRef.current.find((c) => c._id === conversationId);
       const other = conv?.participants.find((p) => p._id === userId);
       if (other) {
@@ -103,18 +119,17 @@ export default function Chat() {
           [conversationId]: `${other.name} is typing...`,
         }));
       }
-    });
+    };
 
-    onUserStoppedTyping(({ conversationId }) => {
+    const handleUserStoppedTyping = ({ conversationId }: { conversationId: string }) => {
       setTypingUsers((prev) => {
         const next = { ...prev };
         delete next[conversationId];
         return next;
       });
-    });
+    };
 
-    // Handle message deleted events
-    onMessageDeleted(({ messageId, conversationId, type }) => {
+    const handleMessageDeleted = ({ messageId, conversationId, type }: { messageId: string; conversationId: string; type: "forMe" | "forEveryone" }) => {
       if (type === "forEveryone") {
         setConversations((prev) => {
           const idx = prev.findIndex((c) => c._id === conversationId);
@@ -132,15 +147,22 @@ export default function Chat() {
           return updated;
         });
       }
-    });
+    };
+
+    // Register all event listeners
+    onReceiveMessage(handleReceiveMessage);
+    onMessagesSeen(handleMessagesSeen);
+    onUserTyping(handleUserTyping);
+    onUserStoppedTyping(handleUserStoppedTyping);
+    onMessageDeleted(handleMessageDeleted);
 
     return () => {
       disconnectSocket();
-      offReceiveMessage();
-      offMessagesSeen();
-      offUserTyping();
-      offUserStoppedTyping();
-      offMessageDeleted();
+      offReceiveMessage(handleReceiveMessage);
+      offMessagesSeen(handleMessagesSeen);
+      offUserTyping(handleUserTyping);
+      offUserStoppedTyping(handleUserStoppedTyping);
+      offMessageDeleted(handleMessageDeleted);
     };
   }, [initialConvId]);
 
@@ -163,40 +185,48 @@ export default function Chat() {
 
   return (
     <Layout showFooter={false}>
-      <div className="flex h-[calc(100vh-64px)] max-w-[1200px] mx-auto w-full">
-        {/* Sidebar */}
-        <div className="w-[360px] min-w-[300px] border-r border-white/10 overflow-y-auto bg-black/15">
-          <div className="px-4 py-4 border-b border-white/10 font-bold text-lg text-white flex items-center justify-between">
-            <span>Messages</span>
-            <button
-              onClick={() => navigate("/browse")}
-              className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
-            >
-              Browse items
-            </button>
-          </div>
-          <ConversationList
-            conversations={conversations}
-            activeId={activeConv?._id || null}
-            onSelect={handleSelect}
-            onHide={handleHide}
-            loading={loading}
-            typingUsers={typingUsers}
-          />
-        </div>
-
-        {/* Main chat area */}
-        <div className="flex-1 flex flex-col">
-          {activeConv ? (
-            <ChatWindow
-              key={activeConv._id}
-              conversation={activeConv}
-            />
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-500 text-base">
-              Select a conversation to start chatting
+      <div className="chat-page">
+        <div className="chat-container">
+          {/* Sidebar */}
+          <div className="chat-sidebar">
+            <div className="chat-sidebar-header">
+              <span>Messages</span>
+              <button
+                onClick={() => navigate("/browse")}
+                className="chat-browse-link"
+              >
+                Browse items
+              </button>
             </div>
-          )}
+            <ConversationList
+              conversations={conversations}
+              activeId={activeConv?._id || null}
+              onSelect={handleSelect}
+              onHide={handleHide}
+              loading={loading}
+              typingUsers={typingUsers}
+            />
+          </div>
+
+          {/* Main chat area */}
+          <div className="chat-main">
+            {activeConv ? (
+              <ChatWindow
+                key={activeConv._id}
+                conversation={activeConv}
+              />
+            ) : (
+              <div className="chat-empty-state">
+                <div className="chat-empty-content">
+                  <div className="chat-empty-icon">💬</div>
+                  <h3 className="chat-empty-title">Select a conversation</h3>
+                  <p className="chat-empty-description">
+                    Choose a conversation from the list to start chatting
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </Layout>

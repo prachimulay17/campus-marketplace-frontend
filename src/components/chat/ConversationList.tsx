@@ -72,19 +72,28 @@ export default function ConversationList({
   };
 
   if (loading) {
-    return <div className="p-6 text-gray-500">Loading conversations...</div>;
+    return (
+      <div className="chat-loading-conversations">
+        <div className="chat-loading-spinner"></div>
+        <p>Loading conversations...</p>
+      </div>
+    );
   }
 
   if (conversations.length === 0) {
     return (
-      <div className="p-6 text-gray-500">
-        No conversations yet. Browse items and message a seller to get started.
+      <div className="chat-no-conversations">
+        <div className="chat-no-conversations-content">
+          <div className="chat-no-conversations-icon">💬</div>
+          <h3>No conversations yet</h3>
+          <p>Browse items and message a seller to get started.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="conversation-list">
       {conversations.map((conv) => {
         const other = getOtherParticipant(conv);
         const isActive = conv._id === activeId;
@@ -100,49 +109,33 @@ export default function ConversationList({
               e.preventDefault();
               setContextMenu({ conv, x: e.clientX, y: e.clientY });
             }}
-            className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
-              isActive
-                ? "bg-purple-500/15 border-l-[3px] border-purple-500"
-                : "border-l-[3px] border-transparent hover:bg-white/5"
-            }`}
+            className={`conversation-list-item ${isActive ? 'active' : ''}`}
           >
-            {/* Avatar with online dot */}
-            <div className="relative shrink-0">
-              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-base">
+            <div className="conversation-avatar">
+              <div className="conversation-avatar-circle">
                 {other.name.charAt(0).toUpperCase()}
               </div>
-              <span
-                className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#0f0b1a] ${
-                  isOnline ? "bg-green-500" : "bg-gray-500"
-                }`}
-              />
+              <span className={`conversation-status-dot ${isOnline ? 'online' : 'offline'}`} />
             </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-sm text-white truncate flex items-center gap-1.5">
-                  {other.name}
-                </span>
-                <span className="text-[11px] text-gray-500 shrink-0 ml-2">
-                  {conv.lastMessage
-                    ? formatTime(conv.lastMessage.createdAt)
-                    : ""}
+            <div className="conversation-content">
+              <div className="conversation-header">
+                <span className="conversation-name">{other.name}</span>
+                <span className="conversation-time">
+                  {conv.lastMessage ? formatTime(conv.lastMessage.createdAt) : ""}
                 </span>
               </div>
-              <div className="flex justify-between items-center mt-0.5">
-                {typingText ? (
-                  <span className="text-xs text-purple-400 italic truncate max-w-[80%]">
-                    {typingText}
-                  </span>
-                ) : (
-                  <span className={`text-xs truncate max-w-[80%] ${conv.lastMessage?.deletedForAll ? 'italic text-gray-600' : 'text-gray-500'}`}>
-                    {conv.lastMessage?.deletedForAll
-                      ? "This message was deleted"
-                      : conv.lastMessage?.content || conv.item?.title || "Item no longer available"}
-                  </span>
-                )}
+              <div className="conversation-preview">
+                <span className={`conversation-message ${
+                  typingText ? 'typing' : ''
+                } ${conv.lastMessage?.deletedForAll ? 'deleted' : ''}`}>
+                  {typingText || 
+                   (conv.lastMessage?.deletedForAll
+                     ? "This message was deleted"
+                     : conv.lastMessage?.content || conv.item?.title || "Item no longer available")}
+                </span>
                 {unread > 0 && (
-                  <span className="bg-purple-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[11px] font-bold shrink-0">
+                  <span className="conversation-unread">
                     {unread}
                   </span>
                 )}
@@ -156,7 +149,7 @@ export default function ConversationList({
       {contextMenu && (
         <div
           ref={menuRef}
-          className="fixed z-50 bg-[#1a1625] border border-white/10 rounded-lg shadow-xl py-1 min-w-[160px]"
+          className="chat-context-menu"
           style={{ left: contextMenu.x, top: contextMenu.y }}
         >
           <button
@@ -164,7 +157,7 @@ export default function ConversationList({
               onHide(contextMenu.conv);
               setContextMenu(null);
             }}
-            className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/5 transition-colors"
+            className="chat-context-menu-item"
           >
             Delete chat
           </button>

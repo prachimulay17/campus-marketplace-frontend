@@ -30,30 +30,25 @@ export default function MessageInput({ onSend, disabled, conversationId }: Props
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex gap-2 px-4 py-3 border-t border-white/10 bg-[#0f0b1a]/60"
-    >
-      <input
-        ref={inputRef}
-        type="text"
-        value={text}
-        onChange={handleChange}
-        placeholder="Type a message..."
-        disabled={disabled}
-        className="flex-1 px-4 py-2.5 rounded-full border border-white/10 bg-white/5 text-white text-sm outline-none placeholder-gray-500 disabled:opacity-50 focus:border-purple-500/40 transition-colors"
-      />
-      <button
-        type="submit"
-        disabled={disabled || !text.trim()}
-        className="px-5 py-2.5 rounded-full border-none text-white text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-default"
-        style={{
-          background:
-            text.trim() && !disabled ? "#7c3aed" : "rgba(255,255,255,0.08)",
-        }}
-      >
-        Send
-      </button>
-    </form>
+    <div className="chat-input-container">
+      <form onSubmit={handleSubmit} className="chat-input-form">
+        <input
+          ref={inputRef}
+          type="text"
+          value={text}
+          onChange={handleChange}
+          placeholder="Type a message..."
+          disabled={disabled}
+          className="chat-input-field"
+        />
+        <button
+          type="submit"
+          disabled={disabled || !text.trim()}
+          className={`chat-input-send ${text.trim() && !disabled ? 'active' : ''}`}
+        >
+          Send
+        </button>
+      </form>
+    </div>
   );
 }
