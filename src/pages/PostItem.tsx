@@ -160,197 +160,218 @@ const PostItem = () => {
 
   return (
     <Layout>
-      <div className="container py-6 md:py-8">
-        <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <Link
-              to="/browse"
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4 transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Browse
-            </Link>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Post an Item</h1>
-            <p className="text-muted-foreground">Fill in the details to list your item for sale</p>
-          </div>
+      <div className="editorial-bg">
+        <div className="container py-6 md:py-8">
+          <div className="max-w-2xl mx-auto">
+            {/* Header */}
+            <div className="mb-6">
+              <Link
+                to="/browse"
+                className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors text-sm"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Browse
+              </Link>
+              <h1 className="editorial-serif text-3xl md:text-4xl font-bold text-gray-900 mb-2">Post an Item</h1>
+              <p className="text-gray-600 text-sm">Fill in the details to list your item for sale</p>
+            </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Image Upload */}
-            <div className="space-y-3">
-              <Label>Photos (1-5 required)</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {uploadedImages.map((image, index) => (
-                  <div key={index} className="relative aspect-square rounded-xl overflow-hidden bg-muted">
-                    <img src={image} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => { removeUploadedImage(index); clearFieldError('images'); }}
-                      className="absolute top-2 right-2 p-1 bg-foreground/80 text-background rounded-full hover:bg-foreground transition-colors"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-                {uploadedImages.length < 5 && (
-                  <label className={cn(
-                    "aspect-square rounded-xl border-2 border-dashed border-border bg-muted/50 flex flex-col items-center justify-center cursor-pointer hover:bg-muted transition-colors",
-                    isUploading && "opacity-50 cursor-not-allowed"
-                  )}>
-                    {isUploading ? (
-                      <Loader2 className="h-6 w-6 text-muted-foreground mb-1 animate-spin" />
-                    ) : (
-                      <Plus className="h-6 w-6 text-muted-foreground mb-1" />
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Image Upload */}
+              <div className="space-y-3">
+                <Label className="text-gray-800 font-medium">Photos (1-5 required)</Label>
+                <div className="story-note p-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {uploadedImages.map((image, index) => (
+                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group">
+                        <img src={image} alt={`Upload ${index + 1}`} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                        <button
+                          type="button"
+                          onClick={() => { removeUploadedImage(index); clearFieldError('images'); }}
+                          className="absolute top-2 right-2 p-1 bg-gray-900/70 text-white rounded-full hover:bg-gray-900/90 transition-colors"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                        {/* Polaroid-style bottom border */}
+                        <div className="absolute bottom-0 left-0 right-0 h-3 bg-white opacity-90"></div>
+                      </div>
+                    ))}
+                    {uploadedImages.length < 5 && (
+                      <label className={cn(
+                        "aspect-square rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors",
+                        isUploading && "opacity-50 cursor-not-allowed"
+                      )}>
+                        {isUploading ? (
+                          <Loader2 className="h-6 w-6 text-gray-400 mb-1 animate-spin" />
+                        ) : (
+                          <Plus className="h-6 w-6 text-gray-400 mb-1" />
+                        )}
+                        <span className="text-xs text-gray-500">
+                          {isUploading ? 'Uploading...' : 'Add Photo'}
+                        </span>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/jpg,image/png,image/webp"
+                          multiple
+                          onChange={handleImageUpload}
+                          disabled={isUploading}
+                          className="hidden"
+                        />
+                      </label>
                     )}
-                    <span className="text-xs text-muted-foreground">
-                      {isUploading ? 'Uploading...' : 'Add Photo'}
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png,image/webp"
-                      multiple
-                      onChange={handleImageUpload}
-                      disabled={isUploading}
-                      className="hidden"
-                    />
-                  </label>
-                )}
+                  </div>
+                  {errors.images && (
+                    <p className="text-sm text-red-600 mt-2">{errors.images}</p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-2">
+                    Upload up to 5 images. Each image must be less than 5MB and in JPEG, PNG, or WebP format.
+                  </p>
+                </div>
               </div>
-              {errors.images && (
-                <p className="text-sm text-destructive">{errors.images}</p>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Upload up to 5 images. Each image must be less than 5MB and in JPEG, PNG, or WebP format.
-              </p>
-            </div>
 
-            {/* Title */}
-            <div className="space-y-2">
-              <Label htmlFor="title">Item Title</Label>
-              <Input
-                id="title"
-                placeholder="e.g., Calculus Textbook - 8th Edition"
-                value={formData.title}
-                onChange={handleChange}
-                required
-                minLength={3}
-                maxLength={100}
-                className={errors.title ? 'border-destructive' : ''}
-              />
-              {errors.title && (
-                <p className="text-sm text-destructive">{errors.title}</p>
-              )}
-            </div>
+              {/* Form Fields in Story Note Cards */}
+              <div className="story-note p-5 space-y-4">
+                {/* Title */}
+                <div className="space-y-2">
+                  <Label htmlFor="title" className="text-gray-800 font-medium">Item Title</Label>
+                  <Input
+                    id="title"
+                    placeholder="e.g., Calculus Textbook - 8th Edition"
+                    value={formData.title}
+                    onChange={handleChange}
+                    required
+                    minLength={3}
+                    maxLength={100}
+                    className={cn(
+                      "border-gray-200 focus:border-orange-300 focus:ring-orange-100 bg-white",
+                      errors.title && "border-red-300 focus:border-red-400 focus:ring-red-100"
+                    )}
+                  />
+                  {errors.title && (
+                    <p className="text-sm text-red-600">{errors.title}</p>
+                  )}
+                </div>
 
-            {/* Description */}
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="Describe your item, including any wear, included accessories, etc."
-                value={formData.description}
-                onChange={handleChange}
-                rows={4}
-                required
-                minLength={10}
-                maxLength={1000}
-                className={errors.description ? 'border-destructive' : ''}
-              />
-              {errors.description && (
-                <p className="text-sm text-destructive">{errors.description}</p>
-              )}
-            </div>
+                {/* Description */}
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="text-gray-800 font-medium">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Describe your item, including any wear, included accessories, etc."
+                    value={formData.description}
+                    onChange={handleChange}
+                    rows={4}
+                    required
+                    minLength={10}
+                    maxLength={1000}
+                    className={cn(
+                      "border-gray-200 focus:border-orange-300 focus:ring-orange-100 bg-white resize-none",
+                      errors.description && "border-red-300 focus:border-red-400 focus:ring-red-100"
+                    )}
+                  />
+                  {errors.description && (
+                    <p className="text-sm text-red-600">{errors.description}</p>
+                  )}
+                </div>
+              </div>
 
-            {/* Price */}
-            <div className="space-y-2">
-              <Label htmlFor="price">Price (₹)</Label>
-              <Input
-                id="price"
-                type="number"
-                min="0.01"
-                step="0.01"
-                placeholder="0.00"
-                value={formData.price || ''}
-                onChange={handleChange}
-                required
-                className={errors.price ? 'border-destructive' : ''}
-              />
-              {errors.price && (
-                <p className="text-sm text-destructive">{errors.price}</p>
-              )}
-            </div>
+              <div className="story-note p-5 space-y-4">
+                {/* Price */}
+                <div className="space-y-2">
+                  <Label htmlFor="price" className="text-gray-800 font-medium">Price (₹)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.price || ''}
+                    onChange={handleChange}
+                    required
+                    className={cn(
+                      "border-gray-200 focus:border-orange-300 focus:ring-orange-100 bg-white",
+                      errors.price && "border-red-300 focus:border-red-400 focus:ring-red-100"
+                    )}
+                  />
+                  {errors.price && (
+                    <p className="text-sm text-red-600">{errors.price}</p>
+                  )}
+                </div>
 
-            {/* Location */}
-            <div className="space-y-2">
-              <Label htmlFor="location">Location (Optional)</Label>
-              <Input
-                id="location"
-                placeholder="e.g., Campus Library, Room 123"
-                value={formData.location}
-                onChange={handleChange}
-                maxLength={100}
-              />
-            </div>
+                {/* Location */}
+                <div className="space-y-2">
+                  <Label htmlFor="location" className="text-gray-800 font-medium">Location (Optional)</Label>
+                  <Input
+                    id="location"
+                    placeholder="e.g., Campus Library, Room 123"
+                    value={formData.location}
+                    onChange={handleChange}
+                    maxLength={100}
+                    className="border-gray-200 focus:border-orange-300 focus:ring-orange-100 bg-white"
+                  />
+                </div>
 
-            {/* Category & Condition */}
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value) => handleSelectChange('category', value)}
+                {/* Category & Condition */}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-gray-800 font-medium">Category</Label>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => handleSelectChange('category', value)}
+                    >
+                      <SelectTrigger className="border-gray-200 focus:border-orange-300 focus:ring-orange-100 bg-white">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200">
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-gray-800 font-medium">Condition</Label>
+                    <Select
+                      value={formData.condition}
+                      onValueChange={(value) => handleSelectChange('condition', value)}
+                    >
+                      <SelectTrigger className="border-gray-200 focus:border-orange-300 focus:ring-orange-100 bg-white">
+                        <SelectValue placeholder="Select condition" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border-gray-200">
+                        {conditions.map((condition) => (
+                          <SelectItem key={condition.id} value={condition.id}>
+                            {condition.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <div className="story-note p-5">
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-to-r from-orange-400 to-orange-500 hover:from-orange-500 hover:to-orange-600 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 hover:shadow-lg"
+                  disabled={createItemMutation.isPending || isUploading || uploadedImages.length === 0}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {createItemMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Posting Item...
+                    </>
+                  ) : (
+                    'Post Item'
+                  )}
+                </Button>
               </div>
-
-              <div className="space-y-2">
-                <Label>Condition</Label>
-                <Select
-                  value={formData.condition}
-                  onValueChange={(value) => handleSelectChange('condition', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select condition" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {conditions.map((condition) => (
-                      <SelectItem key={condition.id} value={condition.id}>
-                        {condition.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Submit */}
-            <Button
-              type="submit"
-              variant="hero"
-              size="lg"
-              className="w-full"
-              disabled={createItemMutation.isPending || isUploading || uploadedImages.length === 0}
-            >
-              {createItemMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Posting Item...
-                </>
-              ) : (
-                'Post Item'
-              )}
-            </Button>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </Layout>
